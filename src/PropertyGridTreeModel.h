@@ -2,12 +2,9 @@
 #define PROPERTYGRIDTREEMODEL_H
 
 #include "PropertyEditor.h"
-#include "PropertyGridTreeItem.h"
 
 #include <QAbstractItemModel>
 #include <QModelIndex>
-#include <QVariant>
-#include <QHash>
 
 namespace PM
 {
@@ -15,6 +12,8 @@ class PropertyGrid;
 
 namespace internal
 {
+    class PropertyGridTreeItem;
+
     class PropertyGridTreeModel : public QAbstractItemModel
     {
         Q_OBJECT

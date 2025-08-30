@@ -50,27 +50,20 @@ This library provides a flexible and customizable property editor that displays 
 
 - **Cross-Platform**: Compatible with Qt 5.15+ and Qt 6.x on Windows, macOS, and Linux
 
+- **Wide Qt Compatibility**: Designed to work with all Qt versions from Qt 5.9 onward, ensuring maximum compatibility across projects
+
 ## Requirements
 
 - **CMake**: 3.10 or higher
-- **Qt**: 5.15 or Qt 6.x+ (Widgets module required)
+- **Qt**: 5.9+ (Widgets module required)
 - **C++ Standard**: C++17 (can work on C++14 if you have a replacement implementation for `std::variant`)
 - **Compiler**: MSVC 2019, GCC, or Clang with C++17 support
 
-## Building
-
-### Using CMake
-
-```bash
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
 ## Quick Start
 
 ```cpp
 #include <PropertyGrid.h>
+
 #include <QApplication>
 
 int main(int argc, char *argv[])
@@ -78,6 +71,14 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     
     PM::PropertyGrid propertyGrid;
+    //
+    // ONLY FOR NOW...
+    //
+    // Add editors for the property types that you're using
+    // This won't be required in the future
+    // 
+    propertyGrid.addPropertyEditor<PM::BoolPropertyEditor>();
+    propertyGrid.addPropertyEditor<PM::ColorPropertyEditor>();
     
     // Add simple properties
     propertyGrid.addProperty("Name", QString("My Object"));
@@ -106,15 +107,6 @@ int main(int argc, char *argv[])
 }
 ```
 
-## Examples
-
-The `examples/property_grid_showcase` directory contains a comprehensive demonstration of the library's capabilities, showcasing:
-
-- All supported property types
-- Property attributes and categorization
-- Interactive property editing
-- Real-time value change handling
-
 ## API Overview
 
 ### Core Classes
@@ -139,6 +131,63 @@ propertyGrid.addProperty("Object ID", 12345,
     PM::CategoryAttribute("System"),
     PM::ReadOnlyAttribute());
 ```
+
+## Building
+
+### Using CMake
+
+```bash
+mkdir build
+cd build
+cmake ..
+cmake --build .
+```
+
+### Integrating into Your Project
+
+You can easily integrate PmPropertyGrid into your CMake project using `add_subdirectory`:
+
+```cmake
+# Add PmPropertyGrid as a subdirectory
+add_subdirectory(path/to/PmPropertyGrid)
+
+# Link against your target
+target_link_libraries(your_target_name PRIVATE PmPropertyGrid)
+```
+
+**Note**: Currently, the library only supports static linking. Shared library support will be added in the future.
+
+#### Complete Example
+
+```cmake
+cmake_minimum_required(VERSION 3.10)
+project(MyProject)
+
+# Find Qt
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+
+# Add PmPropertyGrid
+add_subdirectory(third_party/PmPropertyGrid)
+
+# Create your executable
+add_executable(MyApp main.cpp)
+
+# Link Qt and PmPropertyGrid
+target_link_libraries(MyApp PRIVATE
+    Qt${QT_VERSION_MAJOR}::Widgets
+    PmPropertyGrid
+)
+```
+
+## Examples
+
+The `examples/property_grid_showcase` directory contains a comprehensive demonstration of the library's capabilities, showcasing:
+
+- All supported property types
+- Property attributes and categorization
+- Interactive property editing
+- Real-time value change handling
 
 ## Project Structure
 
