@@ -1,5 +1,9 @@
 # PmPropertyGrid
 
+[![Windows Build](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/windows.yml/badge.svg)](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/windows.yml)
+[![macOS Build](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/macos.yml/badge.svg)](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/macos.yml)
+[![Linux Build](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/linux.yml/badge.svg)](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/linux.yml)
+
 A modern, feature-rich property grid widget for C++ applications (currently supporting Qt, but with more GUI frameworks support planned for the future).</br>
 This library provides a flexible and customizable property editor that displays object properties in a tree-like structure, similar to property editors found in IDEs and game engines.
 
