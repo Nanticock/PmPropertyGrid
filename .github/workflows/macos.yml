@@ -11,7 +11,7 @@ jobs:
   get-matrix:
     uses: ./.github/workflows/matrix-config.yml
 
-  build-macos:
+  build-macos-intel:
     needs: get-matrix
     strategy:
       fail-fast: false
@@ -26,7 +26,32 @@ jobs:
 
     uses: ./.github/workflows/build-shared.yml
     with:
-      os: macos-latest
+      os: macos-13  # Intel-based macOS
+      c_compiler: ${{ matrix.c_compiler }}
+      cpp_compiler: ${{ matrix.cpp_compiler }}
+      qt_version: ${{ matrix.qt_version }}
+
+  build-macos-arm:
+    needs: get-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        c_compiler: ${{ fromJson(needs.get-matrix.outputs.compilers_macos) }}
+        qt_version: ${{ fromJson(needs.get-matrix.outputs.qt_versions) }}
+        include:
+          - c_compiler: gcc
+            cpp_compiler: g++
+          - c_compiler: clang
+            cpp_compiler: clang++
+        exclude:
+          # Exclude Qt5 versions for ARM builds
+          - qt_version: "5.9.*"
+          - qt_version: "5.12.*"
+          - qt_version: "5.15.*"
+
+    uses: ./.github/workflows/build-shared.yml
+    with:
+      os: macos-latest  # Apple Silicon macOS
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
