@@ -14,16 +14,26 @@ QVariant PM::internal::createDefaultVariantForType(int type)
 #endif
 }
 
-Property::Property() : type(QMetaType::UnknownType)
+QString Property::name() const
+{
+    return m_name;
+}
+
+int Property::type() const
+{
+    return m_type;
+}
+
+Property::Property() : m_type(QMetaType::UnknownType)
 {
 }
 
-Property::Property(const Property &other) : name(other.name), type(other.type)
+Property::Property(const Property &other) : m_type(other.m_type), m_name(other.m_name)
 {
     setAttributesFromOther(other);
 }
 
-Property::Property(const QString &name, int type) : name(name), type(type)
+Property::Property(const QString &name, int type) : m_type(type), m_name(name)
 {
 }
 
@@ -32,8 +42,8 @@ Property &Property::operator=(const Property &other)
     if (this == &other)
         return *this;
 
-    name = other.name;
-    type = other.type;
+    m_name = other.m_name;
+    m_type = other.m_type;
 
     setAttributesFromOther(other);
 

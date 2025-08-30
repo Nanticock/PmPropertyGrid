@@ -601,10 +601,10 @@ void PropertyGridPrivate::updatePropertyValue(const QModelIndex &index, const QV
 bool PropertyGridPrivate::setPropertyValue(const PropertyContext &context, const QVariant &value)
 {
     const Property &property = context.property();
-    if (internal::getVariantTypeId(value) != property.type && !internal::canConvert(value, property.type))
+    if (internal::getVariantTypeId(value) != property.type() && !internal::canConvert(value, property.type()))
         return false;
 
-    internal::PropertyGridTreeItem *propertyItem = m_model.getPropertyItem(property.name);
+    internal::PropertyGridTreeItem *propertyItem = m_model.getPropertyItem(property.name());
 
     if (propertyItem == nullptr)
         return false;
@@ -708,13 +708,13 @@ PropertyGrid::~PropertyGrid()
 void PropertyGrid::addProperty(const Property &property, const QVariant &value, void *object)
 {
     // NEVER EVER allow any properties with empty names
-    if (property.name.isEmpty())
+    if (property.name().isEmpty())
         return;
 
     // property name is a unique identifier. duplicates are not allowed
-    if (d->m_model.getPropertyItem(property.name) != nullptr)
+    if (d->m_model.getPropertyItem(property.name()) != nullptr)
     {
-        qWarning() << "property" << property.name << "alrready exists!";
+        qWarning() << "property" << property.name() << "alrready exists!";
         return;
     }
 

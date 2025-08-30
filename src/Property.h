@@ -65,84 +65,12 @@ struct Attribute
 // TODO: should this be renamed to PropertyDescriptor?!!
 struct Property
 {
-    QString name;
-    int type; // TODO: maybe make this readonly?!!
-
-    // TODO: add an extra read-only member to hold the typeId.
-    //       this is important because the type information should be preserved even if the value was invalid.
-    //       currently if the value was set to an invalid QVariant all type information will be lost.
-    //
-    //       The type of this variable can be int, or QMetaType.
-    //       int is how Qt5 used to store the type info.
-    //       the drawback is that strong type checks in tings like function parameters doesn't work out-of-the-box
-    //       in Qt6 this was replaced with using QMetaType instead.
-    //       this incurs additional memory and processing overhead but ensures that strong type checks work properly
-    //
-    //       this is an example code that demonstrates this:
-    /*
-     *          QVariant value;
-     *
-     *          if (!value.isValid())
-     *          #if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-     *              result.value = QVariant(value.metaType(), nullptr); // ##Qt6 value.metaType() returns QMetaType
-     *          #else
-     *              result.value = QVariant(value.userType(), nullptr); // ##Qt5 value.userType() returns int
-     *          #endif
-     */
-    //       another possible solution would be to use std::type_index.
-    //       this will add the ability to support data types that are not registered as in the qmetatype system
-    //       like std::strings and std::vectors and the added benefit of being independant of the changes that happen to Qt.
-    //       but such decision will require us to implement some reliant / lightweight translation method
-    //       that is able to map both systems to each other.
-    //
-    //       such method can be as simple as two static maps like this:
-    /*
-     *       std::unordered_map<std::type_index, int> s_typeIndexToQMetaTypeId = {
-     *           {PM::internal::getTypeId<QString>(), qMetaTypeId<QString>()},
-     *           {PM::internal::getTypeId<QSize>(), qMetaTypeId<QSize>()},
-     *           {PM::internal::getTypeId<QVector2D>(), qMetaTypeId<QVector2D>()},
-     *           {PM::internal::getTypeId<QMatrix4x4>(), qMetaTypeId<QMatrix4x4>()},
-     *       };
-     *
-     *       // use a lambda function to automatically fill the inverse map
-     *       std::unordered_map<int, std::type_index> s_qMetaTypeIdToTypeIndex = [&] {
-     *           std::unordered_map<int, std::type_index> map;
-     *           for (const auto& pair : s_typeIndexToQMetaTypeId)
-     *               map[pair.second] = pair.first;
-     *
-     *           return map;
-     *       }();
-     *
-     *       std::type_index getTypeId(int metaTypeId)
-     *       {
-     *           if (s_qMetaTypeIdToTypeIndex.find(metaTypeId) == s_qMetaTypeIdToTypeIndex.end())
-     *               return typeid(void);
-     *
-     *           return s_qMetaTypeIdToTypeIndex[metaTypeId];
-     *       }
-     *
-     *       int getMetaTypeId(std::type_index typeId)
-     *       {
-     *           if (s_typeIndexToQMetaTypeId.find(typeId) == s_typeIndexToQMetaTypeId.end())
-     *               return QMetaType::UnknownType;
-     *
-     *           return s_typeIndexToQMetaTypeId[typeId];
-     *       }
-     */
+    QString name() const;
+    int type() const;
 
     Property();
     Property(const Property &other);
     Property(const QString &name, int type);
-    // TODO: add move constructor
-
-    // TODO: add a templated constructor when the interface is finalized
-    //       the user has the option to either let the constructor set the type based on the value
-    //       or explicitly provide both the type and the value
-    //
-
-    // Property(const QString &name, int typeId, const QVariant &value) : name(name), typeId(typeId), value(value)
-    // {
-    // }
 
     template <typename... Attributes>
     Property(const QString &name, int typeId, Attributes &&...attributes) : Property(name, typeId)
@@ -161,12 +89,6 @@ struct Property
 
         Q_UNUSED(dummy)
     }
-
-    // template <typename... Attributes>
-    // Property(const QString &name, int typeId, const QVariant &value, const Attributes &...attributes) : Property(name, typeId, value)
-    // {
-    //     addAttribute(attributes...);
-    // }
 
     Property &operator=(const Property &other);
 
@@ -197,6 +119,8 @@ private:
     friend bool internal::isRegisteredAttribute();
 
 private:
+    int m_type;
+    QString m_name;
     std::unordered_map<TypeId, std::unique_ptr<Attribute>> m_attributes;
 
     // FIXME: move to a more appropriate place

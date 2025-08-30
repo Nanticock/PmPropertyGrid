@@ -1,6 +1,4 @@
 #include <PropertyGrid.h>
-#include <PropertyGridTreeItem.h>
-#include <PropertyGridTreeModel.h>
 
 #include <QApplication>
 #include <QBitmap>
@@ -16,20 +14,6 @@
 #include <QVector3D>
 #include <QVector4D>
 
-void printTree(const PM::internal::PropertyGridTreeModel *model, bool showTransientItems)
-{
-    int rowCount = model->rootItem()->childrenCount(showTransientItems);
-
-    qInfo() << rowCount;
-
-    for (int i = 0; i < rowCount; ++i)
-    {
-        auto current = model->rootItem()->getChild(i, showTransientItems);
-
-        qInfo() << current->context.property().name << current->childrenCount(showTransientItems);
-    }
-}
-
 PM::Property createProperty(const QString &name, int type, const QString &description = "", const QVariant &defaultValue = QVariant(),
                             const QString &category = "")
 {
@@ -38,7 +22,7 @@ PM::Property createProperty(const QString &name, int type, const QString &descri
     if (!description.isEmpty())
         result.addAttribute(PM::DescriptionAttribute(description));
 
-    if (defaultValue.isValid() && result.type == PM::internal::getVariantTypeId(defaultValue))
+    if (defaultValue.isValid() && result.type() == PM::internal::getVariantTypeId(defaultValue))
         result.addAttribute(PM::DefaultValueAttribute(defaultValue));
 
     if (!category.isEmpty())
@@ -169,7 +153,7 @@ int main(int argc, char **argv)
                      [](const PM::PropertyContext &context)
                      {
                          //
-                         qInfo() << "propertyValueChanged" << context.property().name << context.value();
+                         qInfo() << "propertyValueChanged" << context.property().name() << context.value();
                      });
 
     return app.exec();
