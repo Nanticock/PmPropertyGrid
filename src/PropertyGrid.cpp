@@ -435,7 +435,7 @@ QModelIndex internal::ModelIndexHelperFunctions::firstIndexInRow(const QModelInd
     QModelIndex result = index;
 
     if (result.column() != 0)
-        result = index.siblingAtColumn(0);
+        result = PM::internal::siblingAtColumn(index, 0);
 
     return result;
 }
@@ -585,7 +585,7 @@ void PropertyGridPrivate::updatePropertyValue(const QModelIndex &index, const QV
     PropertyContext &context = item->context;
     const PropertyEditor *editor = getEditorForProperty(context);
 
-    QModelIndex valueIndex = index.siblingAtColumn(1);
+    QModelIndex valueIndex = PM::internal::siblingAtColumn(index, 1);
 
     internal::PropertyContextPrivate::setValue(context, value);
 
