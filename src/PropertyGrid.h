@@ -1,6 +1,7 @@
 #ifndef PROPERTYGRID_H
 #define PROPERTYGRID_H
 
+#include "QtCompat_p.h"
 #include "PropertyEditor.h"
 
 #include <QDebug>

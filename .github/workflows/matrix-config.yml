@@ -1,0 +1,28 @@
+name: Matrix Configuration
+
+on:
+  workflow_call:
+    outputs:
+      qt_versions:
+        description: "Qt versions to test against (Usually LTS versions)"
+        # lowest LTS version that we can get through aqt is 5.9, so we start from there
+        # that's the reason why "5.6.*" is not included
+        value: '["5.9.*", "5.12.*", "5.15.*", "6.2.*", "6.5.*", "6.8.*"]'
+      compilers_linux:
+        description: "Compilers for Linux"
+        value: '["gcc", "clang"]'
+      compilers_windows:
+        description: "Compilers for Windows"
+        value: '["cl", "gcc", "clang"]'
+      compilers_macos:
+        description: "Compilers for macOS"
+        value: '["gcc", "clang"]'
+
+jobs:
+  # This job exists only to make the workflow valid
+  # The outputs are defined statically above
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configuration ready
+        run: echo "Matrix configuration is ready"

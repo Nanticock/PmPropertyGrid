@@ -7,13 +7,14 @@ set(CMAKE_AUTORCC ON)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
-find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
+find_package(QT NAMES Qt6 Qt5 COMPONENTS Core Widgets REQUIRED)
+find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Widgets REQUIRED)
 
 set(PUBLIC_HEADERS
     Property.h
     PropertyGrid.h
     PropertyEditor.h
+    QtCompat_p.h
 )
 
 add_library(PmPropertyGrid STATIC
@@ -29,6 +30,10 @@ add_library(PmPropertyGrid STATIC
     ${PUBLIC_HEADERS}
 )
 
+add_library(PM::PropertyGrid ALIAS PmPropertyGrid)
+
 target_link_libraries(PmPropertyGrid
-    Qt::Widgets
+    # using versionless aliasses like Qt::Core doesn't work prior to Qt5.15
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Widgets
 )

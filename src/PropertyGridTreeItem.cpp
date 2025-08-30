@@ -200,7 +200,7 @@ void internal::PropertyGridTreeItem::setValue(const QVariant &newValue)
 QVariant internal::PropertyGridTreeItem::getColumnData(int columnIndex, Qt::ItemDataRole role) const
 {
     if (columnIndex == 0 && role == Qt::DisplayRole)
-        return context.property().name;
+        return context.property().name();
 
     // in case the user didn't provide any data for the display role, we return the value of the edit role
     if (role == Qt::DisplayRole && !columns[columnIndex].data.contains(Qt::DisplayRole)) // FIXME: stop using that
@@ -213,7 +213,7 @@ void internal::PropertyGridTreeItem::setColumnData(int columnIndex, Qt::ItemData
 {
     if (columnIndex == 0 && role == Qt::DisplayRole)
     {
-        context.property().name = newValue.toString();
+        context.property().name() = newValue.toString();
         return;
     }
 

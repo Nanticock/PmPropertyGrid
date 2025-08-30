@@ -5,25 +5,26 @@ using namespace PM;
 // FIXME: move to a more appropriate place
 std::unordered_map<TypeId, internal::AttributesFunctionHelper> Property::s_attributesRegistry;
 
-QVariant PM::internal::createDefaultVariantForType(int type)
+QString Property::name() const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    return QVariant(QMetaType(type), nullptr);
-#else
-    return QVariant(QVariant::Type(type));
-#endif
+    return m_name;
 }
 
-Property::Property() : type(QMetaType::UnknownType)
+int Property::type() const
+{
+    return m_type;
+}
+
+Property::Property() : m_type(QMetaType::UnknownType)
 {
 }
 
-Property::Property(const Property &other) : name(other.name), type(other.type)
+Property::Property(const Property &other) : m_type(other.m_type), m_name(other.m_name)
 {
     setAttributesFromOther(other);
 }
 
-Property::Property(const QString &name, int type) : name(name), type(type)
+Property::Property(const QString &name, int type) : m_type(type), m_name(name)
 {
 }
 
@@ -32,8 +33,8 @@ Property &Property::operator=(const Property &other)
     if (this == &other)
         return *this;
 
-    name = other.name;
-    type = other.type;
+    m_name = other.m_name;
+    m_type = other.m_type;
 
     setAttributesFromOther(other);
 

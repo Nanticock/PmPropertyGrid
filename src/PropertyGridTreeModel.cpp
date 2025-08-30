@@ -4,6 +4,7 @@
 
 #include <QApplication>
 #include <QDebug>
+#include <QString>
 
 namespace
 {
@@ -23,16 +24,6 @@ internal::PropertyGridTreeModel::~PropertyGridTreeModel()
 {
     delete m_rootItem;
 }
-
-// TreeModel::TreeModel(const QStringList &headers, const QString &data, QObject *parent) : QAbstractItemModel(parent)
-// {
-//     QVector<QVariant> rootData;
-//     for (const QString &header : headers)
-//         rootData << header;
-
-//     rootItem = new TreeItem(rootData);
-//     setupModelData(data.split('\n'), rootItem);
-// }
 
 int internal::PropertyGridTreeModel::columnCount(const QModelIndex &parent) const
 {
@@ -85,7 +76,7 @@ void internal::PropertyGridTreeModel::setDataForAllColumns(const QModelIndex &in
     const int numberOfColumns = columnCount(index);
 
     for (int i = 0; i < numberOfColumns; ++i)
-        setData(index.siblingAtColumn(i), value, role);
+        setData(PM::internal::siblingAtColumn(index, i), value, role);
 }
 
 Qt::ItemFlags internal::PropertyGridTreeModel::flags(const QModelIndex &index) const
@@ -166,7 +157,7 @@ QModelIndex internal::PropertyGridTreeModel::addProperty(const PropertyContext &
     internal::PropertyGridTreeItem *categoryItem = getCategoryItem(category);
     internal::PropertyGridTreeItem *PropertyItem = categoryItem->addChild(context);
 
-    m_propertiesMap[context.property().name] = PropertyItem;
+    m_propertiesMap[context.property().name()] = PropertyItem;
 
     bool readOnly = context.property().hasAttribute<ReadOnlyAttribute>() && context.property().getAttribute<ReadOnlyAttribute>().value == true;
 
@@ -235,15 +226,6 @@ QModelIndex internal::PropertyGridTreeModel::index(int row, int column, const QM
     return QModelIndex();
 }
 
-// bool TreeModel::insertColumns(int position, int columns, const QModelIndex &parent)
-// {
-//     beginInsertColumns(parent, position, position + columns - 1);
-//     const bool success = rootItem->insertColumns(position, columns);
-//     endInsertColumns();
-
-//     return success;
-// }
-
 bool internal::PropertyGridTreeModel::insertRows(int position, int rows, const QModelIndex &parent)
 {
     PropertyGridTreeItem *parentItem = getItem(parent);
@@ -277,102 +259,3 @@ QModelIndex internal::PropertyGridTreeModel::parent(const QModelIndex &index) co
 
     return createIndex(int(indexInParent), 0, parentItem);
 }
-
-// bool TreeModel::removeColumns(int position, int columns, const QModelIndex &parent)
-// {
-//     beginRemoveColumns(parent, position, position + columns - 1);
-//     const bool success = rootItem->removeColumns(position, columns);
-//     endRemoveColumns();
-
-//     if (rootItem->columnCount() == 0)
-//         removeRows(0, rowCount());
-
-//     return success;
-// }
-
-// bool TreeModel::removeRows(int position, int rows, const QModelIndex &parent)
-// {
-//     TreeItem *parentItem = getItem(parent);
-//     if (!parentItem)
-//         return false;
-
-//     beginRemoveRows(parent, position, position + rows - 1);
-//     const bool success = parentItem->removeChildren(position, rows);
-//     endRemoveRows();
-
-//     return success;
-// }
-
-// bool TreeModel::setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role)
-// {
-//     if (role != Qt::EditRole || orientation != Qt::Horizontal)
-//         return false;
-
-//     const bool result = rootItem->setData(section, value);
-
-//     if (result)
-//         emit headerDataChanged(orientation, section, section);
-
-//     return result;
-// }
-
-// void TreeModel::setupModelData(const QStringList &lines, TreeItem *parent)
-// {
-//     QList<TreeItem *> parents;
-//     QList<int> indentations;
-//     parents << parent;
-//     indentations << 0;
-
-//     int number = 0;
-
-//     while (number < lines.count())
-//     {
-//         int position = 0;
-//         while (position < lines[number].length())
-//         {
-//             if (lines[number].at(position) != ' ')
-//                 break;
-
-//             ++position;
-//         }
-
-//         const QString lineData = lines[number].mid(position).trimmed();
-
-//         if (!lineData.isEmpty())
-//         {
-//             // Read the column data from the rest of the line.
-//             const QStringList columnStrings = lineData.split(QLatin1Char('\t'), Qt::SkipEmptyParts);
-//             QList<QVariant> columnData;
-//             columnData.reserve(columnStrings.size());
-//             for (const QString &columnString : columnStrings)
-//                 columnData << columnString;
-
-//             if (position > indentations.last())
-//             {
-//                 // The last child of the current parent is now the new parent
-//                 // unless the current parent has no children.
-
-//                 if (parents.last()->childCount() > 0)
-//                 {
-//                     parents << parents.last()->child(parents.last()->childCount() - 1);
-//                     indentations << position;
-//                 }
-//             }
-//             else
-//             {
-//                 while (position < indentations.last() && parents.count() > 0)
-//                 {
-//                     parents.pop_back();
-//                     indentations.pop_back();
-//                 }
-//             }
-
-//             // Append a new item to the current parent's list of children.
-//             TreeItem *parent = parents.last();
-//             parent->insertChildren(parent->childCount(), 1, rootItem->columnCount());
-//             for (int column = 0; column < columnData.size(); ++column)
-//                 parent->child(parent->childCount() - 1)->setData(column, columnData[column]);
-//         }
-//         ++number;
-//     }
-// }

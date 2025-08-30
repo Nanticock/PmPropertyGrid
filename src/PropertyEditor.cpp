@@ -1,6 +1,8 @@
 #include "PropertyEditor.h"
 #include "PropertyGrid_p.h"
 
+#include "QtCompat_p.h"
+
 #include <QApplication>
 #include <QBitArray>
 #include <QBitmap>
@@ -66,7 +68,7 @@ PropertyContext::PropertyContext(const Property &property, const QVariant &value
     m_value(value),
     m_object(object),
     m_propertyGrid(propertyGrid),
-    m_isValid(!property.name.isEmpty()),
+    m_isValid(!property.name().isEmpty()),
     m_valueChangedSlot(PropertyContextPrivate::defaultValueChangedSlot())
 {
 }
@@ -80,7 +82,7 @@ QString PropertyEditor::toString(const PropertyContext &context) const
 {
     const QVariant value = context.value();
 
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QString>():
         return value.toString();
@@ -146,7 +148,7 @@ QVariant PropertyEditor::fromString(const QString &value, const PropertyContext 
     static const char errorMessageTemplate[] = "%1 is not a valid value for %2.";
 
     bool _ok;
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QString>():
         return value;
@@ -203,7 +205,7 @@ QVariant PropertyEditor::fromString(const QString &value, const PropertyContext 
         if (!_ok)
             break;
 
-        return longValue;
+        return QVariant::fromValue(longValue);
     }
 
     case qMetaTypeId<std::uint64_t>():
@@ -213,7 +215,7 @@ QVariant PropertyEditor::fromString(const QString &value, const PropertyContext 
         if (!_ok)
             break;
 
-        return ulongValue;
+        return QVariant::fromValue(ulongValue);
     }
 
     case qMetaTypeId<QDate>():
@@ -284,7 +286,7 @@ QVariant PropertyEditor::fromString(const QString &value, const PropertyContext 
     }
 
     if (errorMessage != nullptr)
-        *errorMessage = QString(errorMessageTemplate).arg(value, QMetaType(context.property().type).name());
+        *errorMessage = QString(errorMessageTemplate).arg(value, PM::internal::getMetaTypeName(context.property().type()));
 
     return QVariant();
 }
@@ -319,7 +321,7 @@ void PropertyEditor::editValue(const PropertyContext &context, const QVariant &n
 
 bool SizePropertyEditor::canHandle(const PropertyContext &context) const
 {
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QSize>():
         return true;
@@ -339,7 +341,7 @@ QString SizePropertyEditor::toString(const PropertyContext &context) const
     static const char stringTemplate[] = "%1, %2";
 
     const QVariant value = context.value();
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QSize>():
     {
@@ -363,7 +365,7 @@ QString SizePropertyEditor::toString(const PropertyContext &context) const
 
 bool RectPropertyEditor::canHandle(const PropertyContext &context) const
 {
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QRect>():
         return true;
@@ -383,7 +385,7 @@ QString RectPropertyEditor::toString(const PropertyContext &context) const
     static const char stringTemplate[] = "%1, %2, %3, %4";
 
     const QVariant value = context.value();
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QRect>():
     {
@@ -407,7 +409,7 @@ QString RectPropertyEditor::toString(const PropertyContext &context) const
 
 bool FontPropertyEditor::canHandle(const PropertyContext &context) const
 {
-    return context.property().type == qMetaTypeId<QFont>();
+    return context.property().type() == qMetaTypeId<QFont>();
 }
 
 QString FontPropertyEditor::toString(const PropertyContext &context) const
@@ -544,7 +546,7 @@ QPixmap FontPropertyEditor::getPreviewIcon(const PropertyContext &context) const
 
 bool ColorPropertyEditor::canHandle(const PropertyContext &context) const
 {
-    return context.property().type == qMetaTypeId<QColor>();
+    return context.property().type() == qMetaTypeId<QColor>();
 }
 
 QString ColorPropertyEditor::toString(const PropertyContext &context) const
@@ -583,7 +585,7 @@ QPixmap ColorPropertyEditor::getPreviewIcon(const PropertyContext &context) cons
 
 bool ImagesPropertyEditor::canHandle(const PropertyContext &context) const
 {
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QImage>():
         return true;
@@ -606,14 +608,14 @@ bool ImagesPropertyEditor::canHandle(const PropertyContext &context) const
 
 QString ImagesPropertyEditor::toString(const PropertyContext &context) const
 {
-    return QMetaType(context.property().type).name();
+    return PM::internal::getMetaTypeName(context.property().type());
 }
 
 QPixmap ImagesPropertyEditor::getPreviewIcon(const PropertyContext &context) const
 {
     const QVariant value = context.value();
 
-    switch (context.property().type)
+    switch (context.property().type())
     {
     case qMetaTypeId<QImage>():
     {
@@ -655,7 +657,7 @@ QString CursorPropertyEditor::cursorShapeName(Qt::CursorShape shape)
 
 bool CursorPropertyEditor::canHandle(const PropertyContext &context) const
 {
-    return context.property().type == qMetaTypeId<QCursor>();
+    return context.property().type() == qMetaTypeId<QCursor>();
 }
 
 QString CursorPropertyEditor::toString(const PropertyContext &context) const
@@ -667,7 +669,7 @@ QString CursorPropertyEditor::toString(const PropertyContext &context) const
 
 bool BoolPropertyEditor::canHandle(const PropertyContext &context) const
 {
-    return context.property().type == qMetaTypeId<bool>();
+    return context.property().type() == qMetaTypeId<bool>();
 }
 
 QString BoolPropertyEditor::toString(const PropertyContext &context) const

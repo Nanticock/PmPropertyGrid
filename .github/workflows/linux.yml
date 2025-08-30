@@ -1,0 +1,33 @@
+name: Linux Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  get-matrix:
+    uses: ./.github/workflows/matrix-config.yml
+
+  build-linux:
+    name: linux-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}
+    needs: get-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        c_compiler: ${{ fromJson(needs.get-matrix.outputs.compilers_linux) }}
+        qt_version: ${{ fromJson(needs.get-matrix.outputs.qt_versions) }}
+        include:
+          - c_compiler: gcc
+            cpp_compiler: g++
+          - c_compiler: clang
+            cpp_compiler: clang++
+
+    uses: ./.github/workflows/build-shared.yml
+    with:
+      os: ubuntu-latest
+      c_compiler: ${{ matrix.c_compiler }}
+      cpp_compiler: ${{ matrix.cpp_compiler }}
+      qt_version: ${{ matrix.qt_version }}
