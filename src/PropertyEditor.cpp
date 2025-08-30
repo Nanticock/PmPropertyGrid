@@ -203,7 +203,7 @@ QVariant PropertyEditor::fromString(const QString &value, const PropertyContext 
         if (!_ok)
             break;
 
-        return longValue;
+        return QVariant::fromValue(longValue);
     }
 
     case qMetaTypeId<std::uint64_t>():
@@ -213,7 +213,7 @@ QVariant PropertyEditor::fromString(const QString &value, const PropertyContext 
         if (!_ok)
             break;
 
-        return ulongValue;
+        return QVariant::fromValue(ulongValue);
     }
 
     case qMetaTypeId<QDate>():
