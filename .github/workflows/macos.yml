@@ -12,6 +12,7 @@ jobs:
     uses: ./.github/workflows/matrix-config.yml
 
   build-macos-intel:
+    name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-intel
     needs: get-matrix
     strategy:
       fail-fast: false
@@ -32,6 +33,7 @@ jobs:
       qt_version: ${{ matrix.qt_version }}
 
   build-macos-arm:
+    name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
     needs: get-matrix
     strategy:
       fail-fast: false

@@ -12,6 +12,7 @@ jobs:
     uses: ./.github/workflows/matrix-config.yml
 
   build-linux:
+    name: linux-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}
     needs: get-matrix
     strategy:
       fail-fast: false
