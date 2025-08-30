@@ -37,6 +37,26 @@ const QString &boolToString(bool value)
     return value ? trueKey : falseKey;
 }
 
+namespace PM
+{
+namespace internal
+{
+    // NOTE: this is a convenience function that is compatible with different minor versions of Qt5
+    inline QString getMetaTypeName(int typeId)
+    {
+        QString result;
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+        result = QMetaType(typeId).name();
+#else
+        result = QMetaType::typeName(typeId);
+#endif
+
+        return result;
+    }
+} // namespace internal
+} // namespace PM
+
 Property PropertyContext::property() const
 {
     return m_property;
@@ -284,7 +304,7 @@ QVariant PropertyEditor::fromString(const QString &value, const PropertyContext 
     }
 
     if (errorMessage != nullptr)
-        *errorMessage = QString(errorMessageTemplate).arg(value, QMetaType(context.property().type()).name());
+        *errorMessage = QString(errorMessageTemplate).arg(value, PM::internal::getMetaTypeName(context.property().type()));
 
     return QVariant();
 }
@@ -606,7 +626,7 @@ bool ImagesPropertyEditor::canHandle(const PropertyContext &context) const
 
 QString ImagesPropertyEditor::toString(const PropertyContext &context) const
 {
-    return QMetaType(context.property().type()).name();
+    return PM::internal::getMetaTypeName(context.property().type());
 }
 
 QPixmap ImagesPropertyEditor::getPreviewIcon(const PropertyContext &context) const

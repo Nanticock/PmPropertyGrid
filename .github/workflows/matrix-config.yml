@@ -5,7 +5,9 @@ on:
     outputs:
       qt_versions:
         description: "Qt versions to test against (Usually LTS versions)"
-        value: '["5.6.*", "5.9.*", "5.12.*", "5.15.*", "6.2.*", "6.5.*", "6.8.*"]'
+        # lowest LTS version that we can get through aqt is 5.9, so we start from there
+        # that's the reason why "5.6.*" is not included
+        value: '["5.9.*", "5.12.*", "5.15.*", "6.2.*", "6.5.*", "6.8.*"]'
       compilers_linux:
         description: "Compilers for Linux"
         value: '["gcc", "clang"]'
