@@ -149,14 +149,12 @@ int main(int argc, char **argv)
 
     propertyGrid.layout()->addWidget(&checkbox);
 
-//     QObject::connect(&propertyGrid, &PM::PropertyGrid::propertyValueChanged, &propertyGrid,
-//                      [](const PM::PropertyContext &context)
-//                      {
-//     // for some reson this line causes builds to fail in Qt5 under macOS
-// #if !(defined(Q_OS_MACOS) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
-//                          qInfo() << "propertyValueChanged" << context.property().name() << context.value();
-// #endif
-//                      });
+    QObject::connect(&propertyGrid, &PM::PropertyGrid::propertyValueChanged, &propertyGrid,
+                     [](const PM::PropertyContext &context)
+                     {
+                         //
+                         qInfo() << "propertyValueChanged" << context.property().name() << context.value();
+                     });
 
     return app.exec();
 }

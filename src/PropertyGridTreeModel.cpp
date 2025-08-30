@@ -3,6 +3,7 @@
 #include "PropertyGrid_p.h"
 
 #include <QApplication>
+#include <QString>
 #include <QDebug>
 
 namespace
