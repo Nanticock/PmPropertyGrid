@@ -32,6 +32,7 @@ add_library(PmPropertyGrid STATIC
 add_library(PM::PropertyGrid ALIAS PmPropertyGrid)
 
 target_link_libraries(PmPropertyGrid
-    Qt::Core
-    Qt::Widgets
+    # using versionless aliasses like Qt::Core doesn't work prior to Qt5.15
+    Qt${QT_VERSION_MAJOR}::Core
+    Qt${QT_VERSION_MAJOR}::Widgets
 )
