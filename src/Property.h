@@ -47,14 +47,7 @@ namespace internal
     template <typename T>
     bool isRegisteredAttribute();
 
-    // NOTE: this is a convenience function that is compatible with both Qt5 and Qt6
-    int getVariantTypeId(const QVariant &value);
-    bool canConvert(const QVariant &value, int typeId);
-
     bool isReadOnly(const Property &property);
-
-    // TODO: is this function really needed?!!
-    QVariant createDefaultVariantForType(int type);
 } // namespace internal
 
 struct Attribute
@@ -253,27 +246,6 @@ inline bool PM::internal::isRegisteredAttribute()
     using DecayedT = typename std::decay<T>::type;
 
     return Property::s_attributesRegistry.find(PM::internal::getTypeId<DecayedT>()) != Property::s_attributesRegistry.end();
-}
-
-inline int PM::internal::getVariantTypeId(const QVariant &value)
-{
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    return value.typeId();
-#else
-    return value.type();
-#endif
-}
-
-inline bool PM::internal::canConvert(const QVariant &value, int typeId)
-{
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    const QMetaType variantType = value.metaType();
-    const QMetaType targetType(typeId);
-
-    return QMetaType::canConvert(variantType, targetType);
-#else
-    return value.canConvert(typeId);
-#endif
 }
 
 inline bool PM::internal::isReadOnly(const Property &property)

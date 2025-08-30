@@ -1,7 +1,6 @@
 #ifndef PROPERTYGRIDTREEITEM_H
 #define PROPERTYGRIDTREEITEM_H
 
-#include "Property.h"
 #include "PropertyEditor.h"
 
 #include <QList>

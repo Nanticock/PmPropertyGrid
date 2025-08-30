@@ -1,6 +1,8 @@
 #include "PropertyEditor.h"
 #include "PropertyGrid_p.h"
 
+#include "QtCompat_p.h"
+
 #include <QApplication>
 #include <QBitArray>
 #include <QBitmap>
@@ -36,26 +38,6 @@ const QString &boolToString(bool value)
 
     return value ? trueKey : falseKey;
 }
-
-namespace PM
-{
-namespace internal
-{
-    // NOTE: this is a convenience function that is compatible with different minor versions of Qt5
-    inline QString getMetaTypeName(int typeId)
-    {
-        QString result;
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
-        result = QMetaType(typeId).name();
-#else
-        result = QMetaType::typeName(typeId);
-#endif
-
-        return result;
-    }
-} // namespace internal
-} // namespace PM
 
 Property PropertyContext::property() const
 {

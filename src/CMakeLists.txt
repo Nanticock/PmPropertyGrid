@@ -14,6 +14,7 @@ set(PUBLIC_HEADERS
     Property.h
     PropertyGrid.h
     PropertyEditor.h
+    QtCompat_p.h
 )
 
 add_library(PmPropertyGrid STATIC

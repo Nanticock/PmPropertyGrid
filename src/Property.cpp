@@ -5,15 +5,6 @@ using namespace PM;
 // FIXME: move to a more appropriate place
 std::unordered_map<TypeId, internal::AttributesFunctionHelper> Property::s_attributesRegistry;
 
-QVariant PM::internal::createDefaultVariantForType(int type)
-{
-#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
-    return QVariant(QMetaType(type), nullptr);
-#else
-    return QVariant(QVariant::Type(type));
-#endif
-}
-
 QString Property::name() const
 {
     return m_name;

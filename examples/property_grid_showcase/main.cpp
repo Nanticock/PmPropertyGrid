@@ -1,5 +1,7 @@
 #include <PropertyGrid.h>
 
+#include <QtCompat_p.h>
+
 #include <QApplication>
 #include <QBitmap>
 #include <QCheckBox>

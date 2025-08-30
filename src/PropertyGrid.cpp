@@ -3,6 +3,7 @@
 
 #include "PropertyGridTreeItem.h"
 #include "PropertyGridTreeModel.h"
+#include "QtCompat_p.h"
 
 #include <QComboBox>
 #include <QLineEdit>
