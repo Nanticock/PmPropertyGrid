@@ -152,8 +152,10 @@ int main(int argc, char **argv)
     QObject::connect(&propertyGrid, &PM::PropertyGrid::propertyValueChanged, &propertyGrid,
                      [](const PM::PropertyContext &context)
                      {
-                         //
+    // for some reson this line causes builds to fail in Qt5 under macOS
+#if !(defined(Q_OS_MACOS) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
                          qInfo() << "propertyValueChanged" << context.property().name() << context.value();
+#endif
                      });
 
     return app.exec();
