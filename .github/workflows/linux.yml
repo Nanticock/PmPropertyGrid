@@ -1,0 +1,26 @@
+name: Linux Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-linux:
+    strategy:
+      fail-fast: false
+      matrix:
+        c_compiler: [gcc, clang]
+        include:
+          - c_compiler: gcc
+            cpp_compiler: g++
+          - c_compiler: clang
+            cpp_compiler: clang++
+
+    uses: ./.github/workflows/build-shared.yml
+    with:
+      os: ubuntu-latest
+      c_compiler: ${{ matrix.c_compiler }}
+      cpp_compiler: ${{ matrix.cpp_compiler }}

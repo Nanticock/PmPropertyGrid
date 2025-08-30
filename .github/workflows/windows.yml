@@ -1,0 +1,28 @@
+name: Windows Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  build-windows:
+    strategy:
+      fail-fast: false
+      matrix:
+        c_compiler: [cl, gcc, clang]
+        include:
+          - c_compiler: cl
+            cpp_compiler: cl
+          - c_compiler: gcc
+            cpp_compiler: g++
+          - c_compiler: clang
+            cpp_compiler: clang++
+
+    uses: ./.github/workflows/build-shared.yml
+    with:
+      os: windows-latest
+      c_compiler: ${{ matrix.c_compiler }}
+      cpp_compiler: ${{ matrix.cpp_compiler }}
