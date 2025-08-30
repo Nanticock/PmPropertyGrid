@@ -2,6 +2,7 @@
 #define PROPERTYGRIDTREEMODEL_H
 
 #include "PropertyEditor.h"
+#include "PropertyGridTreeItem.h"
 
 #include <QAbstractItemModel>
 #include <QModelIndex>
@@ -14,8 +15,6 @@ class PropertyGrid;
 
 namespace internal
 {
-    struct PropertyGridTreeItem;
-
     class PropertyGridTreeModel : public QAbstractItemModel
     {
         Q_OBJECT
@@ -31,7 +30,6 @@ namespace internal
         void setDataForAllColumns(const QModelIndex &index, const QVariant &value, Qt::ItemDataRole role);
 
         QVariant headerData(int section, Qt::Orientation orientation, int role) const override;
-        // bool setHeaderData(int section, Qt::Orientation orientation, const QVariant &value, int role = Qt::EditRole) override;
 
         QModelIndex index(int row, int column, const QModelIndex &parent = QModelIndex()) const override;
         QModelIndex parent(const QModelIndex &index) const override;
@@ -41,10 +39,7 @@ namespace internal
 
         Qt::ItemFlags flags(const QModelIndex &index) const override;
 
-        // bool insertColumns(int position, int columns, const QModelIndex &parent = QModelIndex()) override;
-        // bool removeColumns(int position, int columns, const QModelIndex &parent = QModelIndex()) override;
         bool insertRows(int position, int rows, const QModelIndex &parent = QModelIndex()) override;
-        // bool removeRows(int position, int rows, const QModelIndex &parent = QModelIndex()) override;
 
         bool showCategories() const;
         void setShowCategories(bool newShowCategories);
