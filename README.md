@@ -1,6 +1,20 @@
 # PmPropertyGrid
 
-A modern, feature-rich property grid widget for Qt applications written in C++. This library provides a flexible and customizable property editor that displays object properties in a tree-like structure, similar to property editors found in IDEs and game engines.
+A modern, feature-rich property grid widget for C++ applications (currently supporting Qt, but with more GUI frameworks support planned for the future).</br>
+This library provides a flexible and customizable property editor that displays object properties in a tree-like structure, similar to property editors found in IDEs and game engines.
+
+![Property Grid Showcase](docs/images/showcase_image.png)
+
+> **⚠️ Early Release Notice**
+> 
+> This project is shared in connection with the YouTube video: [Building a Property Grid Widget in Qt/C++](https://youtu.be/O-O_c6Ymz8w?si=iEY5bG8kDndACx_v) Published on C++Online 2025
+
+> **Current Status:**
+> - ✅ **API is stable** - Safe to use in your projects without worrying about breaking changes
+> - ⚠️ **Implementation is not fully polished** - Some features may have rough edges
+> - 🚧 **Work in progress** - Actively being improved in my free time to become production-ready
+> 
+> Feel free to use it, report issues, and contribute! The core functionality works well, and the API won't change in ways that break your code.
 
 ## Features
 
@@ -35,8 +49,8 @@ A modern, feature-rich property grid widget for Qt applications written in C++. 
 ## Requirements
 
 - **CMake**: 3.10 or higher
-- **Qt**: 5.15.2 or Qt 6.5.3+ (Widgets module required)
-- **C++ Standard**: C++17
+- **Qt**: 5.15 or Qt 6.5.3+ (Widgets module required)
+- **C++ Standard**: C++17 (can work on C++14 if you have a replacement implementation for `std::variant`)
 - **Compiler**: MSVC 2019, GCC, or Clang with C++17 support
 
 ## Building
@@ -49,11 +63,6 @@ cd build
 cmake ..
 cmake --build .
 ```
-
-### Integration with Qt Creator
-
-The project includes Qt Creator configuration files (`.user` files) for easy development setup.
-
 ## Quick Start
 
 ```cpp
@@ -102,13 +111,6 @@ The `examples/property_grid_showcase` directory contains a comprehensive demonst
 - Interactive property editing
 - Real-time value change handling
 
-To build and run the showcase:
-
-```bash
-cd build/examples/property_grid_showcase
-./property_grid_showcase  # or property_grid_showcase.exe on Windows
-```
-
 ## API Overview
 
 ### Core Classes
@@ -138,16 +140,14 @@ propertyGrid.addProperty("Object ID", 12345,
 
 ```
 PmPropertyGrid/
-├── src/                    # Core library source code
-│   ├── PropertyGrid.h/cpp  # Main property grid widget
-│   ├── Property.h/cpp      # Property definition and attributes
-│   ├── PropertyEditor.h/cpp # Property editor framework
-│   └── PropertyGrid*.h/cpp  # Internal implementation files
-├── examples/               # Example applications
+├── src/                        # Core library source code
+│   ├── PropertyGrid.h/cpp      # Main property grid widget
+│   ├── Property.h/cpp          # Property definition and attributes
+│   └── PropertyEditor.h/cpp    # Property editor framework
+├── examples/                   # Example applications
 │   └── property_grid_showcase/ # Comprehensive demo
-├── build/                  # Build output directory
-├── cmake/                  # CMake modules
-└── tests/                  # Unit tests (coming soon)
+├── cmake/                      # CMake modules (coming soon)
+└── tests/                      # Unit tests (coming soon)
 ```
 
 ## License
@@ -157,17 +157,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Contributing
 
 Contributions are welcome! Please feel free to submit pull requests, report bugs, or suggest new features.
-
-## Development Status
-
-This library is actively developed and ready for production use. Current development focuses on:
-
-- [ ] Dark mode and theme support
-- [ ] Additional property types
-- [ ] Custom property editor framework
-- [ ] Comprehensive unit tests
-- [ ] Documentation improvements
-
-## Acknowledgments
-
-Built with Qt framework and follows modern C++17 practices for type safety and performance.
