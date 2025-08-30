@@ -48,7 +48,7 @@ This library provides a flexible and customizable property editor that displays 
   - Support for custom property editors
   - Responsive tree-based layout
 
-- **Cross-Platform**: Compatible with Qt 5.15+ and Qt 6.x on Windows, macOS, and Linux
+- **Cross-Platform**: Compatible with Qt 5.9+ on Windows, macOS, and Linux
 
 - **Wide Qt Compatibility**: Designed to work with all Qt versions from Qt 5.9 onward, ensuring maximum compatibility across projects
 
