@@ -12,6 +12,9 @@ on:
       cpp_compiler:
         required: true
         type: string
+      qt_version:
+        required: true
+        type: string
 
 jobs:
   build:
@@ -27,7 +30,7 @@ jobs:
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
-          version: '6.8.3'
+          version: ${{ inputs.qt_version }}
           install-deps: 'true'
           set-env: 'true'
 

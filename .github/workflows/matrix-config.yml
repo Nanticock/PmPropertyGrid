@@ -1,0 +1,26 @@
+name: Matrix Configuration
+
+on:
+  workflow_call:
+    outputs:
+      qt_versions:
+        description: "Qt versions to test against"
+        value: '["5.15.2", "6.5.3", "6.8.3"]'
+      compilers_linux:
+        description: "Compilers for Linux"
+        value: '["gcc", "clang"]'
+      compilers_windows:
+        description: "Compilers for Windows"
+        value: '["cl", "gcc", "clang"]'
+      compilers_macos:
+        description: "Compilers for macOS"
+        value: '["gcc", "clang"]'
+
+jobs:
+  # This job exists only to make the workflow valid
+  # The outputs are defined statically above
+  placeholder:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Configuration ready
+        run: echo "Matrix configuration is ready"

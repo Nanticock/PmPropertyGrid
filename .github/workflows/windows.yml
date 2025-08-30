@@ -8,11 +8,16 @@ on:
     branches: [main, develop]
 
 jobs:
+  get-matrix:
+    uses: ./.github/workflows/matrix-config.yml
+
   build-windows:
+    needs: get-matrix
     strategy:
       fail-fast: false
       matrix:
-        c_compiler: [cl, gcc, clang]
+        qt_version: ${{ fromJson(needs.get-matrix.outputs.qt_versions) }}
+        c_compiler: ${{ fromJson(needs.get-matrix.outputs.compilers_windows) }}
         include:
           - c_compiler: cl
             cpp_compiler: cl
@@ -26,3 +31,4 @@ jobs:
       os: windows-latest
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
+      qt_version: ${{ matrix.qt_version }}
