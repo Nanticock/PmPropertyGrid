@@ -1,0 +1,6 @@
+<RCC>
+    <qresource prefix="/">
+        <file>icons/preferences-svgrepo-com.svg</file>
+        <file>icons/bow-tie-black-02.jpg</file>
+    </qresource>
+</RCC>
