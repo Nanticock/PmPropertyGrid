@@ -49,7 +49,7 @@ This library provides a flexible and customizable property editor that displays 
 ## Requirements
 
 - **CMake**: 3.10 or higher
-- **Qt**: 5.15 or Qt 6.5.3+ (Widgets module required)
+- **Qt**: 5.15 or Qt 6.x+ (Widgets module required)
 - **C++ Standard**: C++17 (can work on C++14 if you have a replacement implementation for `std::variant`)
 - **Compiler**: MSVC 2019, GCC, or Clang with C++17 support
 
