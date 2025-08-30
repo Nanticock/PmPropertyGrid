@@ -3,8 +3,8 @@
 #include "PropertyGrid_p.h"
 
 #include <QApplication>
-#include <QString>
 #include <QDebug>
+#include <QString>
 
 namespace
 {
@@ -76,7 +76,7 @@ void internal::PropertyGridTreeModel::setDataForAllColumns(const QModelIndex &in
     const int numberOfColumns = columnCount(index);
 
     for (int i = 0; i < numberOfColumns; ++i)
-        setData(index.siblingAtColumn(i), value, role);
+        setData(PM::internal::siblingAtColumn(index, i), value, role);
 }
 
 Qt::ItemFlags internal::PropertyGridTreeModel::flags(const QModelIndex &index) const
