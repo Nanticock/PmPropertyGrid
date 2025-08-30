@@ -6,6 +6,7 @@
 #include <QAbstractItemModel>
 #include <QModelIndex>
 #include <QVariant>
+#include <QHash>
 
 namespace PM
 {
