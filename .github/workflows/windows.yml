@@ -9,7 +9,7 @@ on:
 
 jobs:
   get-matrix:
-    uses: ./.github/workflows/matrix-config.yml
+    uses: ./.github/workflows/_matrix-config.yml
 
   build-windows:
     name: windows-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}
@@ -27,7 +27,7 @@ jobs:
           - c_compiler: clang
             cpp_compiler: clang++
 
-    uses: ./.github/workflows/build-shared.yml
+    uses: ./.github/workflows/_build-shared.yml
     with:
       os: windows-latest
       c_compiler: ${{ matrix.c_compiler }}
