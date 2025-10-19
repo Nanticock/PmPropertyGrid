@@ -173,6 +173,17 @@ QModelIndex internal::PropertyGridTreeModel::getItemIndex(PropertyGridTreeItem *
     return createIndex(item->indexInParent(m_showCategories), 0, item);
 }
 
+void internal::PropertyGridTreeModel::clearModel()
+{
+    beginResetModel();
+    {
+        m_categoriesMap.clear();
+        m_propertiesMap.clear();
+        m_rootItem->children.clear();
+    }
+    endResetModel();
+}
+
 internal::PropertyGridTreeItem *internal::PropertyGridTreeModel::getCategoryItem(const QString &category)
 {
     if (m_categoriesMap.contains(category))

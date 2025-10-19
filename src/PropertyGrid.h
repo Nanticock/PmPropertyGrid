@@ -1,8 +1,8 @@
 #ifndef PROPERTYGRID_H
 #define PROPERTYGRID_H
 
-#include "QtCompat_p.h"
 #include "PropertyEditor.h"
+#include "QtCompat_p.h"
 
 #include <QDebug>
 
@@ -51,11 +51,16 @@ public:
 
     PropertyContext getPropertyContext(const QString &propertyName) const;
 
+public: /* EXPERIMENTAL API */
+    /**/
+    void clearProperties();            // Requested: 2
+    QStringList propertyNames() const; // Requested: 2
+
 signals:
     void propertyValueChanged(const PM::PropertyContext &context);
 
 private: // stable internal functions
-    void addPropertyEditor_impl(TypeId, std::unique_ptr<PropertyEditor> &&editor);
+    void addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor);
 
 private:
     PropertyGridPrivate *d;

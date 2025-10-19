@@ -768,6 +768,16 @@ PropertyContext PropertyGrid::getPropertyContext(const QString &propertyName) co
     return internal::PropertyContextPrivate::invalidContext();
 }
 
+void PropertyGrid::clearProperties()
+{
+    d->m_model.clearModel();
+}
+
+QStringList PropertyGrid::propertyNames() const
+{
+    return d->m_model.getPropertiesNames();
+}
+
 void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor)
 {
     d->m_propertyEditors.emplace(typeId, std::move(editor));

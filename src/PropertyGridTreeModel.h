@@ -56,6 +56,9 @@ namespace internal
         PropertyGridTreeItem *getItem(const QModelIndex &index) const; // FIXME: should this be public?!!
         QModelIndex getItemIndex(PropertyGridTreeItem *item) const;
 
+        void clearModel();
+        QStringList getPropertiesNames() const;
+
     private:
         bool m_showCategories;
         PropertyGridTreeItem *m_rootItem;
@@ -65,5 +68,10 @@ namespace internal
     };
 } // namespace internal
 } // namespace PM
+
+inline QStringList PM::internal::PropertyGridTreeModel::getPropertiesNames() const
+{
+    return m_propertiesMap.keys();
+}
 
 #endif // PROPERTYGRIDTREEMODEL_H
