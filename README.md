@@ -16,20 +16,20 @@ This library provides a flexible and customizable property editor that displays 
 > **Current Status:**
 > - ✅ **API is stable** - Safe to use in your projects without worrying about breaking changes
 > - ⚠️ **Implementation is not fully polished** - Some features may have rough edges
-> - 🚧 **Work in progress** - Actively being improved in my free time to become production-ready
+> - 🚧 **Work in progress** - Actively being improved to become production-ready
 > 
 > Feel free to use it, report issues, and contribute! The core functionality works well, and the API won't change in ways that break your code.
 
 ## Features
 
-- **Comprehensive Type Support**: Built-in support for all major Qt types including:
-  - Basic types: `int`, `bool`, `QString`, `double`
-  - Geometric types: `QPoint`, `QPointF`, `QSize`, `QSizeF`, `QRect`, `QRectF`, `QLine`, `QLineF`
-  - Graphics types: `QColor`, `QFont`, `QIcon`, `QPixmap`, `QBitmap`, `QImage`
-  - Advanced types: `QVector2D`, `QVector3D`, `QVector4D`, `QMatrix4x4`, `QPolygon`, `QPolygonF`
-  - Date/Time types: `QDate`, `QTime`, `QDateTime`
-  - UI types: `QKeySequence`, `QCursor`, `QChar`
-  - Object types: `QObject*` and custom enums
+- **Comprehensive Type Support**: Planned Built-in support for all major Qt types including:
+  - [x] **Basic types**: `int`, `bool`, `QString`, `double`
+  - [ ] **Geometric types**: `QPoint`, `QPointF`, `QSize`, `QSizeF`, `QRect`, `QRectF`, `QLine`, `QLineF`
+  - [x] **Graphics types**: `QColor`, `QFont`, `QIcon`, `QPixmap`, `QBitmap`, `QImage`
+  - [ ] **Advanced types**: `QVector2D`, `QVector3D`, `QVector4D`, `QMatrix4x4`, `QPolygon`, `QPolygonF`
+  - [x] **Date/Time types**: `QDate`, `QTime`, `QDateTime`
+  - [ ] **UI types** (partial): `QKeySequence`, `QCursor`, `QChar`
+  - [ ] **Object types**: `QObject*` and custom enums
 
 - **Property Attributes**: Rich attribute system for enhanced property configuration:
   - `DescriptionAttribute`: Add helpful descriptions to properties
