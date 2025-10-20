@@ -190,6 +190,7 @@ PmPropertyGrid/
 ├── src/                        # Core library source code
 │   ├── PropertyGrid.h/cpp      # Main property grid widget
 │   ├── Property.h/cpp          # Property definition and attributes
+│   ├── PropertyContext.h/cpp   # Property definition, value and associated meta info
 │   └── PropertyEditor.h/cpp    # Property editor framework
 ├── examples/                   # Example applications
 │   └── property_grid_showcase/ # Comprehensive demo
