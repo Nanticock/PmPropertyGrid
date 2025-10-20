@@ -46,8 +46,13 @@ public:
 
 public: /* EXPERIMENTAL API */
     /**/
-    template <typename T, typename = internal::templateCheck_t<internal::isPropertyEditor<T>()>>
-    void removePropertyEditor();
+    template <typename OldEditor, typename NewEditor,
+              // clang-format off
+              typename = internal::templateCheck_t<internal::isPropertyEditor<OldEditor>()>,
+              typename = internal::templateCheck_t<internal::isPropertyEditor<NewEditor>()>
+              // clang-format on
+              >
+    void replacePropertyEditor();
 
     void clearProperties();            // Requested: 2
     QStringList propertyNames() const; // Requested: 2
@@ -56,7 +61,8 @@ signals:
     void propertyValueChanged(const PM::PropertyContext &context);
 
 private: // stable internal functions
-    void removePropertyEditor_impl(TypeId typeId);
+    void replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::unique_ptr<PropertyEditor> &&editor);
+
     void addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor);
 
 private:
@@ -73,10 +79,10 @@ inline void PM::PropertyGrid::addProperty(const QString &name, const QVariant &v
     addProperty(Property(name, internal::getVariantTypeId(value), attributes...), value);
 }
 
-template <typename T, typename T2>
-inline void PM::PropertyGrid::removePropertyEditor()
+template <typename OldEditor, typename NewEditor, typename, typename>
+inline void PM::PropertyGrid::replacePropertyEditor()
 {
-    removePropertyEditor_impl(internal::getTypeId<T>());
+    replacePropertyEditor_impl(internal::getTypeId<OldEditor>(), internal::getTypeId<NewEditor>(), std::make_unique<NewEditor>());
 }
 
 template <typename T, typename>

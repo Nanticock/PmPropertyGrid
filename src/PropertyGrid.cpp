@@ -716,10 +716,28 @@ QStringList PropertyGrid::propertyNames() const
     return d->m_model.getPropertiesNames();
 }
 
-void PropertyGrid::removePropertyEditor_impl(TypeId typeId)
+void PropertyGrid::replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::unique_ptr<PropertyEditor> &&editor)
 {
-    d->m_propertyEditors.erase(typeId);
+    if (d->m_propertyEditors.find(oldEditorTypeId) == d->m_propertyEditors.end())
+    {
+        qWarning() << "Cannot replace a non-existing editor";
+        return;
+    }
 
+    d->m_propertyEditors.erase(oldEditorTypeId);
+
+    // no need to add a new instance of the default property editor if the user specified it explicitly
+    if (newEditorTypeId == internal::getTypeId<PropertyEditor>())
+        return;
+
+    addPropertyEditor_impl(newEditorTypeId, std::move(editor));
+}
+
+void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor)
+{
+    d->m_propertyEditors.emplace(typeId, std::move(editor));
+
+    // Force all property entries in the view to get calculated using the updated editors list
     const QStringList names = propertyNames();
     for (const QString &propertyName : names)
     {
@@ -729,9 +747,4 @@ void PropertyGrid::removePropertyEditor_impl(TypeId typeId)
 
         d->updatePropertyValue(propertyIndex, context.value());
     }
-}
-
-void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor)
-{
-    d->m_propertyEditors.emplace(typeId, std::move(editor));
 }
