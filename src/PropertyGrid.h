@@ -30,14 +30,7 @@ public:
 
     // @@ CONVENIENCE
     template <typename... Attributes>
-    void addProperty(const QString &name, const QVariant &value, const Attributes &...attributes)
-    {
-        if (!value.isValid())
-            qWarning() << "PropertyGrid::addProperty(): Cannot infer the type of property" << name
-                       << "because the provided QVariant value is invalid.";
-
-        addProperty(Property(name, internal::getVariantTypeId(value), attributes...), value);
-    }
+    void addProperty(const QString &name, const QVariant &value, const Attributes &...attributes);
 
     // TODO: change to return false if a property editor returns subProperties list with invalid names?!!
     template <typename T, typename = internal::templateCheck_t<internal::isPropertyEditor<T>()>>
@@ -53,11 +46,11 @@ public:
 
 public: /* EXPERIMENTAL API */
     /**/
-    void clearProperties();            // Requested: 2
-    QStringList propertyNames() const; // Requested: 2
-
     template <typename T, typename = internal::templateCheck_t<internal::isPropertyEditor<T>()>>
     void removePropertyEditor();
+
+    void clearProperties();            // Requested: 2
+    QStringList propertyNames() const; // Requested: 2
 
 signals:
     void propertyValueChanged(const PM::PropertyContext &context);
@@ -70,6 +63,15 @@ private:
     PropertyGridPrivate *d;
 };
 } // namespace PM
+
+template <typename... Attributes>
+inline void PM::PropertyGrid::addProperty(const QString &name, const QVariant &value, const Attributes &...attributes)
+{
+    if (!value.isValid())
+        qWarning() << "PropertyGrid::addProperty(): Cannot infer the type of property" << name << "because the provided QVariant value is invalid.";
+
+    addProperty(Property(name, internal::getVariantTypeId(value), attributes...), value);
+}
 
 template <typename T, typename T2>
 inline void PM::PropertyGrid::removePropertyEditor()
