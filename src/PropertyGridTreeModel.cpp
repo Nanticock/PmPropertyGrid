@@ -1,6 +1,8 @@
-#include "PropertyGridTreeModel.h"
-#include "PropertyGridTreeItem.h"
-#include "PropertyGrid_p.h"
+#include "PropertyGridTreeModel_p.h"
+
+#include "PropertyContext_p.h"
+#include "PropertyGridTreeItem_p.h"
+#include "QtCompat_p.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -114,14 +116,7 @@ void internal::PropertyGridTreeModel::setShowCategories(bool newShowCategories)
 
     m_showCategories = newShowCategories;
 
-    beginResetModel();
-
-    // Notify about the structural change
-    emit layoutAboutToBeChanged();
-    emit dataChanged(createIndex(0, 0), createIndex(rowCount(), columnCount()));
-    emit layoutChanged();
-
-    endResetModel();
+    update();
 }
 
 internal::PropertyGridTreeItem *internal::PropertyGridTreeModel::rootItem() const
@@ -173,12 +168,35 @@ QModelIndex internal::PropertyGridTreeModel::getItemIndex(PropertyGridTreeItem *
     return createIndex(item->indexInParent(m_showCategories), 0, item);
 }
 
+void internal::PropertyGridTreeModel::clearModel()
+{
+    beginResetModel();
+    {
+        m_categoriesMap.clear();
+        m_propertiesMap.clear();
+        m_rootItem->children.clear();
+    }
+    endResetModel();
+}
+
+void internal::PropertyGridTreeModel::update()
+{
+    beginResetModel();
+
+    // Notify about the structural change
+    emit layoutAboutToBeChanged();
+    emit dataChanged(createIndex(0, 0), createIndex(rowCount(), columnCount()));
+    emit layoutChanged();
+
+    endResetModel();
+}
+
 internal::PropertyGridTreeItem *internal::PropertyGridTreeModel::getCategoryItem(const QString &category)
 {
     if (m_categoriesMap.contains(category))
         return m_categoriesMap.value(category);
 
-    const PropertyContext tempCategoryContext = internal::PropertyContextPrivate::createContext(PM::Property(category, QMetaType::UnknownType));
+    const PropertyContext tempCategoryContext = PropertyContextPrivate::createContext(PM::Property(category, QMetaType::UnknownType));
     PropertyGridTreeItem *result = m_rootItem->addChild(tempCategoryContext);
     result->isTransient = true;
     // TODO: make category item expanded by default?!!

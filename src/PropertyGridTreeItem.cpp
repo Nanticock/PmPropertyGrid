@@ -1,5 +1,6 @@
-#include "PropertyGridTreeItem.h"
-#include "PropertyGrid_p.h"
+#include "PropertyGridTreeItem_p.h"
+
+#include "PropertyContext_p.h"
 
 using namespace PM;
 
@@ -178,7 +179,7 @@ internal::PropertyGridTreeItem *internal::PropertyGridTreeItem::getChild(size_t 
 
 internal::PropertyGridTreeItem *internal::PropertyGridTreeItem::addChild(const PropertyContext &context)
 {
-    if (!insertChildren(children.size(), 1, 2))
+    if (!insertChildren(static_cast<int>(children.size()), 1, 2))
         return nullptr;
 
     auto &newChild = children.back();
@@ -269,10 +270,7 @@ int internal::PropertyGridTreeItem::indexInParent(bool showTransientItems) const
     return -1;
 }
 
-internal::PropertyGridTreeItem::PropertyGridTreeItem() :
-    context(PM::internal::PropertyContextPrivate::invalidContext()),
-    parent(nullptr),
-    isTransient(false)
+internal::PropertyGridTreeItem::PropertyGridTreeItem() : context(PM::PropertyContextPrivate::invalidContext()), parent(nullptr), isTransient(false)
 {
 }
 

@@ -1,8 +1,8 @@
 #ifndef PROPERTYGRID_H
 #define PROPERTYGRID_H
 
-#include "QtCompat_p.h"
 #include "PropertyEditor.h"
+#include "QtCompat_p.h"
 
 #include <QDebug>
 
@@ -30,14 +30,7 @@ public:
 
     // @@ CONVENIENCE
     template <typename... Attributes>
-    void addProperty(const QString &name, const QVariant &value, const Attributes &...attributes)
-    {
-        if (!value.isValid())
-            qWarning() << "PropertyGrid::addProperty(): Cannot infer the type of property" << name
-                       << "because the provided QVariant value is invalid.";
-
-        addProperty(Property(name, internal::getVariantTypeId(value), attributes...), value);
-    }
+    void addProperty(const QString &name, const QVariant &value, const Attributes &...attributes);
 
     // TODO: change to return false if a property editor returns subProperties list with invalid names?!!
     template <typename T, typename = internal::templateCheck_t<internal::isPropertyEditor<T>()>>
@@ -51,16 +44,46 @@ public:
 
     PropertyContext getPropertyContext(const QString &propertyName) const;
 
+public: /* EXPERIMENTAL API */
+    /**/
+    template <typename OldEditor, typename NewEditor,
+              // clang-format off
+              typename = internal::templateCheck_t<internal::isPropertyEditor<OldEditor>()>,
+              typename = internal::templateCheck_t<internal::isPropertyEditor<NewEditor>()>
+              // clang-format on
+              >
+    void replacePropertyEditor();
+
+    void clearProperties();            // Requested: 2
+    QStringList propertyNames() const; // Requested: 2
+
 signals:
     void propertyValueChanged(const PM::PropertyContext &context);
 
 private: // stable internal functions
-    void addPropertyEditor_impl(TypeId, std::unique_ptr<PropertyEditor> &&editor);
+    void replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::shared_ptr<PropertyEditor> &&editor);
+
+    void addPropertyEditor_impl(TypeId typeId, std::shared_ptr<PropertyEditor> &&editor);
 
 private:
     PropertyGridPrivate *d;
 };
 } // namespace PM
+
+template <typename... Attributes>
+inline void PM::PropertyGrid::addProperty(const QString &name, const QVariant &value, const Attributes &...attributes)
+{
+    if (!value.isValid())
+        qWarning() << "PropertyGrid::addProperty(): Cannot infer the type of property" << name << "because the provided QVariant value is invalid.";
+
+    addProperty(Property(name, internal::getVariantTypeId(value), attributes...), value);
+}
+
+template <typename OldEditor, typename NewEditor, typename, typename>
+inline void PM::PropertyGrid::replacePropertyEditor()
+{
+    replacePropertyEditor_impl(internal::getTypeId<OldEditor>(), internal::getTypeId<NewEditor>(), std::make_unique<NewEditor>());
+}
 
 template <typename T, typename>
 inline void PM::PropertyGrid::addPropertyEditor()

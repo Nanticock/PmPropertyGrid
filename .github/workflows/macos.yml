@@ -4,12 +4,17 @@ on:
   workflow_dispatch:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - '*.md'
+      
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '*.md'
 
 jobs:
   get-matrix:
-    uses: ./.github/workflows/matrix-config.yml
+    uses: ./.github/workflows/_matrix-config.yml
 
   build-macos-intel:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-intel
@@ -25,7 +30,7 @@ jobs:
           - c_compiler: clang
             cpp_compiler: clang++
 
-    uses: ./.github/workflows/build-shared.yml
+    uses: ./.github/workflows/_build-shared.yml
     with:
       os: macos-13  # Intel-based macOS
       c_compiler: ${{ matrix.c_compiler }}
@@ -51,7 +56,7 @@ jobs:
           - qt_version: "5.12.*"
           - qt_version: "5.15.*"
 
-    uses: ./.github/workflows/build-shared.yml
+    uses: ./.github/workflows/_build-shared.yml
     with:
       os: macos-latest  # Apple Silicon macOS
       c_compiler: ${{ matrix.c_compiler }}

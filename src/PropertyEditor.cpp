@@ -1,6 +1,6 @@
 #include "PropertyEditor.h"
-#include "PropertyGrid_p.h"
 
+#include "PropertyContext_p.h"
 #include "QtCompat_p.h"
 
 #include <QApplication>
@@ -39,38 +39,29 @@ const QString &boolToString(bool value)
     return value ? trueKey : falseKey;
 }
 
-Property PropertyContext::property() const
+template <typename T>
+std::pair<TypeId, std::shared_ptr<T>> createPropertyEditorMapEntry()
 {
-    return m_property;
+    return std::pair<TypeId, std::shared_ptr<T>>(internal::getTypeId<T>(), std::make_shared<T>());
 }
 
-QVariant PropertyContext::value() const
+const PropertyEditorsMap_t &PM::internal::defaultPropertyEditors()
 {
-    return m_value;
-}
+    // TODO: should have the ability to modify this list at runtime if we ever made this API public
 
-bool PropertyContext::isValid() const
-{
-    return m_isValid;
-}
+    // clang-format off
+    static PropertyEditorsMap_t instance = {
+        createPropertyEditorMapEntry<SizePropertyEditor>(),
+        createPropertyEditorMapEntry<RectPropertyEditor>(),
+        createPropertyEditorMapEntry<FontPropertyEditor>(),
+        createPropertyEditorMapEntry<ColorPropertyEditor>(),
+        createPropertyEditorMapEntry<ImagesPropertyEditor>(),
+        createPropertyEditorMapEntry<CursorPropertyEditor>(),
+        createPropertyEditorMapEntry<BoolPropertyEditor>(),
+    };
+    // clang-format on
 
-PropertyGrid *PropertyContext::propertyGrid() const
-{
-    return m_propertyGrid;
-}
-
-PropertyContext::PropertyContext() : PropertyContext(Property(), QVariant(), nullptr, nullptr)
-{
-}
-
-PropertyContext::PropertyContext(const Property &property, const QVariant &value, void *object, PropertyGrid *propertyGrid) :
-    m_property(property),
-    m_value(value),
-    m_object(object),
-    m_propertyGrid(propertyGrid),
-    m_isValid(!property.name().isEmpty()),
-    m_valueChangedSlot(PropertyContextPrivate::defaultValueChangedSlot())
-{
+    return instance;
 }
 
 bool PropertyEditor::canHandle(const PropertyContext &context) const
@@ -474,7 +465,7 @@ QVariant FontPropertyEditor::fromString(const QString &value, const PropertyCont
 
     QString sizeValue = properties[1];
     bool isPixelSize = sizeValue.endsWith("px");
-    int fontSize = sizeValue.left(sizeValue.length() - (isPixelSize ? 2 : 0)).toInt();
+    int fontSize = PM::internal::stringLeft(sizeValue, sizeValue.length() - (isPixelSize ? 2 : 0)).toInt();
 
     QFont font(fontFamily);
     if (isPixelSize)
@@ -488,15 +479,15 @@ QVariant FontPropertyEditor::fromString(const QString &value, const PropertyCont
         const QString &prop = properties[i];
 
         if (prop.startsWith(weightKey))
-            font.setWeight(static_cast<QFont::Weight>(prop.mid(weightKey.length()).toInt()));
+            font.setWeight(static_cast<QFont::Weight>(PM::internal::stringMid(prop, weightKey.length()).toInt()));
         else if (prop.startsWith(styleKey))
-            font.setStyle(static_cast<QFont::Style>(prop.mid(styleKey.length()).toInt()));
+            font.setStyle(static_cast<QFont::Style>(PM::internal::stringMid(prop, styleKey.length()).toInt()));
         else if (prop.startsWith(underlineKey))
-            font.setUnderline(prop.mid(underlineKey.length()).toInt());
+            font.setUnderline(PM::internal::stringMid(prop, underlineKey.length()).toInt());
         else if (prop.startsWith(strikeOutKey))
-            font.setStrikeOut(prop.mid(strikeOutKey.length()).toInt());
+            font.setStrikeOut(PM::internal::stringMid(prop, strikeOutKey.length()).toInt());
         else if (prop.startsWith(kerningKey))
-            font.setKerning(prop.mid(kerningKey.length()).toInt());
+            font.setKerning(PM::internal::stringMid(prop, kerningKey.length()).toInt());
     }
 
     return QVariant::fromValue(font);

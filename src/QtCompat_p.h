@@ -17,6 +17,14 @@ namespace PM
 {
 namespace internal
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+    using StringRef_t = QStringView;
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+    using StringRef_t = QStringRef;
+#else
+    using StringRef_t = QString;
+#endif
+
     inline QModelIndex siblingAtColumn(const QModelIndex &index, int column)
     {
 #if QT_VERSION >= QT_VERSION_CHECK(5, 13, 0)
@@ -53,6 +61,28 @@ namespace internal
         return QMetaType::canConvert(variantType, targetType);
 #else
         return value.canConvert(typeId);
+#endif
+    }
+
+    inline StringRef_t stringLeft(const QString &input, int n)
+    {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        return QStringView(input).left(n);
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        return input.leftRef(n);
+#else
+        return input.left(n);
+#endif
+    }
+
+    inline StringRef_t stringMid(const QString &input, int position, int n = -1)
+    {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+        return QStringView(input).mid(position, n);
+#elif QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+        return input.midRef(position, n);
+#else
+        return input.mid(position, n);
 #endif
     }
 

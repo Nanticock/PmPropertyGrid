@@ -12,9 +12,10 @@ find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Core Widgets REQUIRED)
 
 set(PUBLIC_HEADERS
     Property.h
+    QtCompat_p.h
     PropertyGrid.h
     PropertyEditor.h
-    QtCompat_p.h
+    PropertyContext.h
 )
 
 add_library(PmPropertyGrid STATIC
@@ -23,10 +24,13 @@ add_library(PmPropertyGrid STATIC
     PropertyGrid.ui
     PropertyGrid_p.h
     PropertyGrid.cpp
-    PropertyGridTreeItem.h
+    PropertyGridTreeItem_p.h
     PropertyGridTreeItem.cpp
-    PropertyGridTreeModel.h
+    PropertyGridTreeModel_p.h
     PropertyGridTreeModel.cpp
+    PropertyContext_p.h
+    PropertyContext.cpp
+
     ${PUBLIC_HEADERS}
 )
 

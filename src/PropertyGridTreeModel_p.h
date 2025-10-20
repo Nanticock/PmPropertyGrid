@@ -1,5 +1,15 @@
-#ifndef PROPERTYGRIDTREEMODEL_H
-#define PROPERTYGRIDTREEMODEL_H
+#ifndef PROPERTYGRIDTREEMODEL_P_H
+#define PROPERTYGRIDTREEMODEL_P_H
+
+//
+//  W A R N I N G
+//  -------------
+//
+// This file is not part of the PM::PropertyGrid API. It exists purely as an
+// implementation detail. This header file may change from version to
+// version without notice, or even be removed.
+//
+//
 
 #include "PropertyEditor.h"
 
@@ -12,7 +22,7 @@ class PropertyGrid;
 
 namespace internal
 {
-    class PropertyGridTreeItem;
+    struct PropertyGridTreeItem;
 
     class PropertyGridTreeModel : public QAbstractItemModel
     {
@@ -56,6 +66,11 @@ namespace internal
         PropertyGridTreeItem *getItem(const QModelIndex &index) const; // FIXME: should this be public?!!
         QModelIndex getItemIndex(PropertyGridTreeItem *item) const;
 
+        void clearModel();
+        QStringList getPropertiesNames() const;
+
+        void update();
+
     private:
         bool m_showCategories;
         PropertyGridTreeItem *m_rootItem;
@@ -66,4 +81,9 @@ namespace internal
 } // namespace internal
 } // namespace PM
 
-#endif // PROPERTYGRIDTREEMODEL_H
+inline QStringList PM::internal::PropertyGridTreeModel::getPropertiesNames() const
+{
+    return m_propertiesMap.keys();
+}
+
+#endif // PROPERTYGRIDTREEMODEL_P_H

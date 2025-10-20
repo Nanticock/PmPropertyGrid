@@ -1,8 +1,9 @@
 #include "PropertyGrid.h"
 #include "PropertyGrid_p.h"
 
-#include "PropertyGridTreeItem.h"
-#include "PropertyGridTreeModel.h"
+#include "PropertyContext_p.h"
+#include "PropertyGridTreeItem_p.h"
+#include "PropertyGridTreeModel_p.h"
 #include "QtCompat_p.h"
 
 #include <QComboBox>
@@ -357,69 +358,6 @@ QString internal::PropertyEditorWidget::valueToString(const QVariant &value) con
     return propertyEditor()->toString(newContext);
 }
 
-PropertyContext &internal::PropertyContextPrivate::invalidContext()
-{
-    static PropertyContext result;
-
-    return result;
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const Property &property)
-{
-    return PropertyContext(property, QVariant(), nullptr, nullptr);
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const QVariant &value, bool valid)
-{
-    PropertyContext result;
-    result.m_value = value;
-    result.m_isValid = valid;
-
-    return result;
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const PropertyContext &other, const QVariant &newValue)
-{
-    PropertyContext result = other;
-    result.m_value = newValue;
-
-    return result;
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const Property &property, const QVariant &value, void *object,
-                                                                PropertyGrid *propertyGrid)
-{
-    return PropertyContext(property, value, object, propertyGrid);
-}
-
-void internal::PropertyContextPrivate::setValue(PropertyContext &context, const QVariant &value)
-{
-    context.m_value = value;
-    notifyValueChanged(context, value);
-}
-
-internal::PropertyContextPrivate::valueChangedSlot_t internal::PropertyContextPrivate::defaultValueChangedSlot()
-{
-    static valueChangedSlot_t result = [](const QVariant &) {};
-
-    return result;
-}
-
-void internal::PropertyContextPrivate::disconnectValueChangedSlot(PropertyContext &context)
-{
-    context.m_valueChangedSlot = defaultValueChangedSlot();
-}
-
-void internal::PropertyContextPrivate::connectValueChangedSlot(PropertyContext &context, const valueChangedSlot_t &slot)
-{
-    context.m_valueChangedSlot = slot;
-}
-
-void internal::PropertyContextPrivate::notifyValueChanged(const PropertyContext &context, const QVariant &newValue)
-{
-    context.m_valueChangedSlot(newValue);
-}
-
 QString internal::ModelIndexHelperFunctions::firstValueInRowAsString(const QModelIndex &index, Qt::ItemDataRole role)
 {
     QVariant result = firstValueInRow(index, role);
@@ -546,7 +484,11 @@ QSize internal::PropertyGridItemDelegate::sizeHint(const QStyleOptionViewItem &o
     return result;
 }
 
-PropertyGridPrivate::PropertyGridPrivate(PropertyGrid *q) : q(q), ui(new Ui::PropertyGrid()), tableViewItemDelegate(q)
+PropertyGridPrivate::PropertyGridPrivate(PropertyGrid *q) :
+    q(q),
+    ui(new Ui::PropertyGrid()),
+    tableViewItemDelegate(q),
+    m_propertyEditors(internal::defaultPropertyEditors())
 {
 }
 
@@ -587,7 +529,7 @@ void PropertyGridPrivate::updatePropertyValue(const QModelIndex &index, const QV
 
     QModelIndex valueIndex = PM::internal::siblingAtColumn(index, 1);
 
-    internal::PropertyContextPrivate::setValue(context, value);
+    PropertyContextPrivate::setValue(context, value);
 
     m_model.setData(valueIndex, value, Qt::EditRole);
     m_model.setData(valueIndex, editor->toString(context), Qt::DisplayRole);
@@ -719,7 +661,7 @@ void PropertyGrid::addProperty(const Property &property, const QVariant &value, 
         return;
     }
 
-    PropertyContext context = internal::PropertyContextPrivate::createContext(property, value, object, this);
+    PropertyContext context = PropertyContextPrivate::createContext(property, value, object, this);
 
     QModelIndex propertyIndex = d->m_model.addProperty(context);
 
@@ -765,10 +707,52 @@ PropertyContext PropertyGrid::getPropertyContext(const QString &propertyName) co
     if (treeItem != nullptr)
         return treeItem->context;
 
-    return internal::PropertyContextPrivate::invalidContext();
+    return PropertyContextPrivate::invalidContext();
 }
 
-void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor)
+void PropertyGrid::clearProperties()
 {
+    d->m_model.clearModel();
+}
+
+QStringList PropertyGrid::propertyNames() const
+{
+    return d->m_model.getPropertiesNames();
+}
+
+void PropertyGrid::replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::shared_ptr<PropertyEditor> &&editor)
+{
+    if (d->m_propertyEditors.find(oldEditorTypeId) == d->m_propertyEditors.end())
+    {
+        qWarning() << "Cannot replace a non-existing editor";
+        return;
+    }
+
+    d->m_propertyEditors.erase(oldEditorTypeId);
+
+    // no need to add a new instance of the default property editor if the user specified it explicitly
+    if (newEditorTypeId == internal::getTypeId<PropertyEditor>())
+        return;
+
+    addPropertyEditor_impl(newEditorTypeId, std::move(editor));
+}
+
+void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::shared_ptr<PropertyEditor> &&editor)
+{
+    // If the new editor already exists then there is no need to add it again
+    if (d->m_propertyEditors.find(typeId) != d->m_propertyEditors.end())
+        return;
+
     d->m_propertyEditors.emplace(typeId, std::move(editor));
+
+    // Force all property entries in the view to get calculated using the updated editors list
+    const QStringList names = propertyNames();
+    for (const QString &propertyName : names)
+    {
+        const PropertyContext context = getPropertyContext(propertyName);
+        internal::PropertyGridTreeItem *item = d->m_model.getPropertyItem(propertyName);
+        const QModelIndex propertyIndex = d->m_model.getItemIndex(item);
+
+        d->updatePropertyValue(propertyIndex, context.value());
+    }
 }

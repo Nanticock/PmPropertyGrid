@@ -1,7 +1,7 @@
 #ifndef PROPERTYEDITOR_H
 #define PROPERTYEDITOR_H
 
-#include "Property.h"
+#include "PropertyContext.h"
 
 #include <QTreeWidgetItem>
 
@@ -15,8 +15,6 @@ class PropertyEditor;
 
 namespace internal
 {
-    class PropertyContextPrivate;
-
     template <typename T>
     constexpr bool isPropertyEditor()
     {
@@ -27,58 +25,10 @@ namespace internal
 
         return isPropertyEditor;
     }
+
+    using PropertyEditorsMap_t = std::unordered_map<TypeId, std::shared_ptr<PropertyEditor>>;
+    const PropertyEditorsMap_t &defaultPropertyEditors();
 } // namespace internal
-
-class PropertyContext
-{
-    friend class PM::internal::PropertyContextPrivate;
-
-public:
-    Property property() const;
-    QVariant value() const;
-
-    bool isValid() const;
-
-    template <typename T>
-    T object() const // WARNING: this function would never perform any checks for type-safety
-    {
-        return getObjectValue<T>(std::is_pointer<T>());
-    }
-
-    PropertyGrid *propertyGrid() const;
-
-private: // TODO: wouldn't this cause problems when writing unit tests for user property editors?
-    PropertyContext();
-    PropertyContext(const Property &property, const QVariant &value, void *object, PropertyGrid *propertyGrid);
-
-    // function for pointer types
-    template <typename T>
-    T getObjectValue(std::true_type) const
-    {
-        return static_cast<T>(m_object);
-    }
-
-    // function for non-pointer types
-    template <typename T>
-    T getObjectValue(std::false_type) const
-    {
-        T *result = static_cast<T *>(m_object);
-        if (result == nullptr)
-            return T();
-
-        return *result;
-    }
-
-private:
-    Property m_property;
-    QVariant m_value;
-    void *m_object; // TODO: use std::any
-    QPointer<PropertyGrid> m_propertyGrid;
-
-    // Meta values
-    bool m_isValid;
-    std::function<void(const QVariant &)> m_valueChangedSlot;
-};
 
 class PropertyEditor
 {

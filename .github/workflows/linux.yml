@@ -4,12 +4,17 @@ on:
   workflow_dispatch:
   push:
     branches: [main, develop]
+    paths-ignore:
+      - '*.md'
+      
   pull_request:
     branches: [main, develop]
+    paths-ignore:
+      - '*.md'
 
 jobs:
   get-matrix:
-    uses: ./.github/workflows/matrix-config.yml
+    uses: ./.github/workflows/_matrix-config.yml
 
   build-linux:
     name: linux-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}
@@ -25,7 +30,7 @@ jobs:
           - c_compiler: clang
             cpp_compiler: clang++
 
-    uses: ./.github/workflows/build-shared.yml
+    uses: ./.github/workflows/_build-shared.yml
     with:
       os: ubuntu-latest
       c_compiler: ${{ matrix.c_compiler }}
