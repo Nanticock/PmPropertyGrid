@@ -1,3 +1,1 @@
-include_directories(${CMAKE_SOURCE_DIR}/src)
-
 add_subdirectory(property_grid_showcase)

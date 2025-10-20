@@ -140,7 +140,8 @@ cmake --build .
 You can easily integrate PmPropertyGrid into your CMake project using `add_subdirectory`:
 
 ```cmake
-# Add PmPropertyGrid as a subdirectory
+# Add PmPropertyGrid as a subdirectory and disable examples
+set(PM_BUILD_PROPERTY_GRID_EXAMPLES OFF)
 add_subdirectory(path/to/PmPropertyGrid)
 
 # Link against your target
@@ -160,6 +161,7 @@ find_package(QT NAMES Qt6 Qt5 COMPONENTS Widgets REQUIRED)
 find_package(Qt${QT_VERSION_MAJOR} COMPONENTS Widgets REQUIRED)
 
 # Add PmPropertyGrid
+set(PM_BUILD_PROPERTY_GRID_EXAMPLES OFF)
 add_subdirectory(third_party/PmPropertyGrid)
 
 # Create your executable

@@ -36,6 +36,11 @@ add_library(PmPropertyGrid STATIC
 
 add_library(PM::PropertyGrid ALIAS PmPropertyGrid)
 
+target_include_directories(PmPropertyGrid
+    PUBLIC
+    ${CMAKE_CURRENT_SOURCE_DIR}
+)
+
 target_link_libraries(PmPropertyGrid
     # using versionless aliasses like Qt::Core doesn't work prior to Qt5.15
     Qt${QT_VERSION_MAJOR}::Core

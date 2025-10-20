@@ -10,5 +10,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
+option(PM_BUILD_PROPERTY_GRID_EXAMPLES "Determines whether or not the example projects should be built with the library" ON)
+
 add_subdirectory(src)
-add_subdirectory(examples)
+
+if(PM_BUILD_PROPERTY_GRID_EXAMPLES)
+    add_subdirectory(examples)
+endif()
