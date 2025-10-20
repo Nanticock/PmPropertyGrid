@@ -1,10 +1,20 @@
 #ifndef PROPERTYGRID_P_H
 #define PROPERTYGRID_P_H
 
+//
+//  W A R N I N G
+//  -------------
+//
+// This file is not part of the PM::PropertyGrid API. It exists purely as an
+// implementation detail. This header file may change from version to
+// version without notice, or even be removed.
+//
+//
+
 #include "PropertyGrid.h"
 #include "ui_PropertyGrid.h"
 
-#include "PropertyGridTreeModel.h"
+#include "PropertyGridTreeModel_p.h"
 
 #include <QComboBox>
 #include <QLineEdit>

@@ -24,9 +24,9 @@ add_library(PmPropertyGrid STATIC
     PropertyGrid.ui
     PropertyGrid_p.h
     PropertyGrid.cpp
-    PropertyGridTreeItem.h
+    PropertyGridTreeItem_p.h
     PropertyGridTreeItem.cpp
-    PropertyGridTreeModel.h
+    PropertyGridTreeModel_p.h
     PropertyGridTreeModel.cpp
     PropertyContext_p.h
     PropertyContext.cpp

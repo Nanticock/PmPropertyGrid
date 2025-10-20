@@ -1,4 +1,4 @@
-#include "PropertyGridTreeItem.h"
+#include "PropertyGridTreeItem_p.h"
 
 #include "PropertyContext_p.h"
 

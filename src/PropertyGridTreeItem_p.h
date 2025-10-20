@@ -1,5 +1,15 @@
-#ifndef PROPERTYGRIDTREEITEM_H
-#define PROPERTYGRIDTREEITEM_H
+#ifndef PROPERTYGRIDTREEITEM_P_H
+#define PROPERTYGRIDTREEITEM_P_H
+
+//
+//  W A R N I N G
+//  -------------
+//
+// This file is not part of the PM::PropertyGrid API. It exists purely as an
+// implementation detail. This header file may change from version to
+// version without notice, or even be removed.
+//
+//
 
 #include "PropertyContext.h"
 
@@ -106,4 +116,4 @@ namespace internal
 } // namespace internal
 } // namespace PM
 
-#endif // PROPERTYGRIDTREEITEM_H
+#endif // PROPERTYGRIDTREEITEM_P_H

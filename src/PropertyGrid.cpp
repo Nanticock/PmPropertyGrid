@@ -2,8 +2,8 @@
 #include "PropertyGrid_p.h"
 
 #include "PropertyContext_p.h"
-#include "PropertyGridTreeItem.h"
-#include "PropertyGridTreeModel.h"
+#include "PropertyGridTreeItem_p.h"
+#include "PropertyGridTreeModel_p.h"
 #include "QtCompat_p.h"
 
 #include <QComboBox>
