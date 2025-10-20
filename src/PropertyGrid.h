@@ -56,16 +56,26 @@ public: /* EXPERIMENTAL API */
     void clearProperties();            // Requested: 2
     QStringList propertyNames() const; // Requested: 2
 
+    template <typename T, typename = internal::templateCheck_t<internal::isPropertyEditor<T>()>>
+    void removePropertyEditor();
+
 signals:
     void propertyValueChanged(const PM::PropertyContext &context);
 
 private: // stable internal functions
+    void removePropertyEditor_impl(TypeId typeId);
     void addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor);
 
 private:
     PropertyGridPrivate *d;
 };
 } // namespace PM
+
+template <typename T, typename T2>
+inline void PM::PropertyGrid::removePropertyEditor()
+{
+    removePropertyEditor_impl(internal::getTypeId<T>());
+}
 
 template <typename T, typename>
 inline void PM::PropertyGrid::addPropertyEditor()

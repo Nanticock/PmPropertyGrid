@@ -778,6 +778,21 @@ QStringList PropertyGrid::propertyNames() const
     return d->m_model.getPropertiesNames();
 }
 
+void PropertyGrid::removePropertyEditor_impl(TypeId typeId)
+{
+    d->m_propertyEditors.erase(typeId);
+
+    const QStringList names = propertyNames();
+    for (const QString &propertyName : names)
+    {
+        const PropertyContext context = getPropertyContext(propertyName);
+        internal::PropertyGridTreeItem *item = d->m_model.getPropertyItem(propertyName);
+        const QModelIndex propertyIndex = d->m_model.getItemIndex(item);
+
+        d->updatePropertyValue(propertyIndex, context.value());
+    }
+}
+
 void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor)
 {
     d->m_propertyEditors.emplace(typeId, std::move(editor));

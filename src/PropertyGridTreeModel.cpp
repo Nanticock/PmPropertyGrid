@@ -114,14 +114,7 @@ void internal::PropertyGridTreeModel::setShowCategories(bool newShowCategories)
 
     m_showCategories = newShowCategories;
 
-    beginResetModel();
-
-    // Notify about the structural change
-    emit layoutAboutToBeChanged();
-    emit dataChanged(createIndex(0, 0), createIndex(rowCount(), columnCount()));
-    emit layoutChanged();
-
-    endResetModel();
+    update();
 }
 
 internal::PropertyGridTreeItem *internal::PropertyGridTreeModel::rootItem() const
@@ -181,6 +174,18 @@ void internal::PropertyGridTreeModel::clearModel()
         m_propertiesMap.clear();
         m_rootItem->children.clear();
     }
+    endResetModel();
+}
+
+void internal::PropertyGridTreeModel::update()
+{
+    beginResetModel();
+
+    // Notify about the structural change
+    emit layoutAboutToBeChanged();
+    emit dataChanged(createIndex(0, 0), createIndex(rowCount(), columnCount()));
+    emit layoutChanged();
+
     endResetModel();
 }
 

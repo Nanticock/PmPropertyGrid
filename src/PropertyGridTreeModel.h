@@ -59,6 +59,8 @@ namespace internal
         void clearModel();
         QStringList getPropertiesNames() const;
 
+        void update();
+
     private:
         bool m_showCategories;
         PropertyGridTreeItem *m_rootItem;
