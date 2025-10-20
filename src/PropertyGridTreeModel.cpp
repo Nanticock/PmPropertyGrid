@@ -1,6 +1,8 @@
 #include "PropertyGridTreeModel.h"
+
+#include "PropertyContext_p.h"
 #include "PropertyGridTreeItem.h"
-#include "PropertyGrid_p.h"
+#include "QtCompat_p.h"
 
 #include <QApplication>
 #include <QDebug>
@@ -194,7 +196,7 @@ internal::PropertyGridTreeItem *internal::PropertyGridTreeModel::getCategoryItem
     if (m_categoriesMap.contains(category))
         return m_categoriesMap.value(category);
 
-    const PropertyContext tempCategoryContext = internal::PropertyContextPrivate::createContext(PM::Property(category, QMetaType::UnknownType));
+    const PropertyContext tempCategoryContext = PropertyContextPrivate::createContext(PM::Property(category, QMetaType::UnknownType));
     PropertyGridTreeItem *result = m_rootItem->addChild(tempCategoryContext);
     result->isTransient = true;
     // TODO: make category item expanded by default?!!

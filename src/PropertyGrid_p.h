@@ -112,30 +112,6 @@ namespace internal
         PropertyEditorLineEdit m_propertylineEdit;
     };
 
-    // FIXME: move to a more appropriate location
-    class PropertyContextPrivate
-    {
-    public:
-        using valueChangedSlot_t = std::function<void(const QVariant &)>;
-
-    public:
-        static PropertyContext &invalidContext();
-
-        static PropertyContext createContext(const Property &property);
-        static PropertyContext createContext(const QVariant &value, bool valid = true);
-        static PropertyContext createContext(const PropertyContext &other, const QVariant &newValue);
-        static PropertyContext createContext(const Property &property, const QVariant &value, void *object, PropertyGrid *propertyGrid);
-
-        static void setValue(PropertyContext &context, const QVariant &value);
-
-        static valueChangedSlot_t defaultValueChangedSlot();
-
-        static void disconnectValueChangedSlot(PropertyContext &context);
-        static void connectValueChangedSlot(PropertyContext &context, const valueChangedSlot_t &slot);
-
-        static void notifyValueChanged(const PropertyContext &context, const QVariant &newValue);
-    };
-
     // TODO: can we get rid of this altogether?!!
     struct ModelIndexHelperFunctions
     {

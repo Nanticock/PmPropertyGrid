@@ -1,6 +1,7 @@
 #include "PropertyGrid.h"
 #include "PropertyGrid_p.h"
 
+#include "PropertyContext_p.h"
 #include "PropertyGridTreeItem.h"
 #include "PropertyGridTreeModel.h"
 #include "QtCompat_p.h"
@@ -357,69 +358,6 @@ QString internal::PropertyEditorWidget::valueToString(const QVariant &value) con
     return propertyEditor()->toString(newContext);
 }
 
-PropertyContext &internal::PropertyContextPrivate::invalidContext()
-{
-    static PropertyContext result;
-
-    return result;
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const Property &property)
-{
-    return PropertyContext(property, QVariant(), nullptr, nullptr);
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const QVariant &value, bool valid)
-{
-    PropertyContext result;
-    result.m_value = value;
-    result.m_isValid = valid;
-
-    return result;
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const PropertyContext &other, const QVariant &newValue)
-{
-    PropertyContext result = other;
-    result.m_value = newValue;
-
-    return result;
-}
-
-PropertyContext internal::PropertyContextPrivate::createContext(const Property &property, const QVariant &value, void *object,
-                                                                PropertyGrid *propertyGrid)
-{
-    return PropertyContext(property, value, object, propertyGrid);
-}
-
-void internal::PropertyContextPrivate::setValue(PropertyContext &context, const QVariant &value)
-{
-    context.m_value = value;
-    notifyValueChanged(context, value);
-}
-
-internal::PropertyContextPrivate::valueChangedSlot_t internal::PropertyContextPrivate::defaultValueChangedSlot()
-{
-    static valueChangedSlot_t result = [](const QVariant &) {};
-
-    return result;
-}
-
-void internal::PropertyContextPrivate::disconnectValueChangedSlot(PropertyContext &context)
-{
-    context.m_valueChangedSlot = defaultValueChangedSlot();
-}
-
-void internal::PropertyContextPrivate::connectValueChangedSlot(PropertyContext &context, const valueChangedSlot_t &slot)
-{
-    context.m_valueChangedSlot = slot;
-}
-
-void internal::PropertyContextPrivate::notifyValueChanged(const PropertyContext &context, const QVariant &newValue)
-{
-    context.m_valueChangedSlot(newValue);
-}
-
 QString internal::ModelIndexHelperFunctions::firstValueInRowAsString(const QModelIndex &index, Qt::ItemDataRole role)
 {
     QVariant result = firstValueInRow(index, role);
@@ -587,7 +525,7 @@ void PropertyGridPrivate::updatePropertyValue(const QModelIndex &index, const QV
 
     QModelIndex valueIndex = PM::internal::siblingAtColumn(index, 1);
 
-    internal::PropertyContextPrivate::setValue(context, value);
+    PropertyContextPrivate::setValue(context, value);
 
     m_model.setData(valueIndex, value, Qt::EditRole);
     m_model.setData(valueIndex, editor->toString(context), Qt::DisplayRole);
@@ -719,7 +657,7 @@ void PropertyGrid::addProperty(const Property &property, const QVariant &value, 
         return;
     }
 
-    PropertyContext context = internal::PropertyContextPrivate::createContext(property, value, object, this);
+    PropertyContext context = PropertyContextPrivate::createContext(property, value, object, this);
 
     QModelIndex propertyIndex = d->m_model.addProperty(context);
 
@@ -765,7 +703,7 @@ PropertyContext PropertyGrid::getPropertyContext(const QString &propertyName) co
     if (treeItem != nullptr)
         return treeItem->context;
 
-    return internal::PropertyContextPrivate::invalidContext();
+    return PropertyContextPrivate::invalidContext();
 }
 
 void PropertyGrid::clearProperties()

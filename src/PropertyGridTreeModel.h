@@ -12,7 +12,7 @@ class PropertyGrid;
 
 namespace internal
 {
-    class PropertyGridTreeItem;
+    struct PropertyGridTreeItem;
 
     class PropertyGridTreeModel : public QAbstractItemModel
     {

@@ -1,6 +1,6 @@
 #include "PropertyEditor.h"
-#include "PropertyGrid_p.h"
 
+#include "PropertyContext_p.h"
 #include "QtCompat_p.h"
 
 #include <QApplication>
@@ -37,40 +37,6 @@ const QString &boolToString(bool value)
     static QString falseKey = PROPERTY_EDITOR_FALSE_STRING;
 
     return value ? trueKey : falseKey;
-}
-
-Property PropertyContext::property() const
-{
-    return m_property;
-}
-
-QVariant PropertyContext::value() const
-{
-    return m_value;
-}
-
-bool PropertyContext::isValid() const
-{
-    return m_isValid;
-}
-
-PropertyGrid *PropertyContext::propertyGrid() const
-{
-    return m_propertyGrid;
-}
-
-PropertyContext::PropertyContext() : PropertyContext(Property(), QVariant(), nullptr, nullptr)
-{
-}
-
-PropertyContext::PropertyContext(const Property &property, const QVariant &value, void *object, PropertyGrid *propertyGrid) :
-    m_property(property),
-    m_value(value),
-    m_object(object),
-    m_propertyGrid(propertyGrid),
-    m_isValid(!property.name().isEmpty()),
-    m_valueChangedSlot(PropertyContextPrivate::defaultValueChangedSlot())
-{
 }
 
 bool PropertyEditor::canHandle(const PropertyContext &context) const
