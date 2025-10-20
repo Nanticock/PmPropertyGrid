@@ -46,13 +46,6 @@ int main(int argc, char **argv)
     QApplication app(argc, argv);
 
     PM::PropertyGrid propertyGrid;
-    propertyGrid.addPropertyEditor<PM::FontPropertyEditor>();
-    propertyGrid.addPropertyEditor<PM::SizePropertyEditor>();
-    propertyGrid.addPropertyEditor<PM::BoolPropertyEditor>();
-    propertyGrid.addPropertyEditor<PM::RectPropertyEditor>();
-    propertyGrid.addPropertyEditor<PM::ColorPropertyEditor>();
-    propertyGrid.addPropertyEditor<PM::ImagesPropertyEditor>();
-    propertyGrid.addPropertyEditor<PM::CursorPropertyEditor>();
 
     // add properties
     addProperty(propertyGrid, "Property1", "Value1", "Description of property1");

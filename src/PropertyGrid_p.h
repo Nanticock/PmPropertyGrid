@@ -183,7 +183,7 @@ public:
     internal::PropertyGridItemDelegate tableViewItemDelegate;
 
     internal::PropertyGridTreeModel m_model;
-    std::unordered_map<TypeId, std::unique_ptr<PropertyEditor>> m_propertyEditors;
+    internal::PropertyEditorsMap_t m_propertyEditors;
 };
 } // namespace PM
 

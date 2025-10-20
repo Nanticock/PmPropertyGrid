@@ -39,6 +39,31 @@ const QString &boolToString(bool value)
     return value ? trueKey : falseKey;
 }
 
+template <typename T>
+std::pair<TypeId, std::shared_ptr<T>> createPropertyEditorMapEntry()
+{
+    return std::pair<TypeId, std::shared_ptr<T>>(internal::getTypeId<T>(), std::make_shared<T>());
+}
+
+const PropertyEditorsMap_t &PM::internal::defaultPropertyEditors()
+{
+    // TODO: should have the ability to modify this list at runtime if we ever made this API public
+
+    // clang-format off
+    static PropertyEditorsMap_t instance = {
+        createPropertyEditorMapEntry<SizePropertyEditor>(),
+        createPropertyEditorMapEntry<RectPropertyEditor>(),
+        createPropertyEditorMapEntry<FontPropertyEditor>(),
+        createPropertyEditorMapEntry<ColorPropertyEditor>(),
+        createPropertyEditorMapEntry<ImagesPropertyEditor>(),
+        createPropertyEditorMapEntry<CursorPropertyEditor>(),
+        createPropertyEditorMapEntry<BoolPropertyEditor>(),
+    };
+    // clang-format on
+
+    return instance;
+}
+
 bool PropertyEditor::canHandle(const PropertyContext &context) const
 {
     return true;

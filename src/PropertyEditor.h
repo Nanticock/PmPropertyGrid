@@ -25,6 +25,9 @@ namespace internal
 
         return isPropertyEditor;
     }
+
+    using PropertyEditorsMap_t = std::unordered_map<TypeId, std::shared_ptr<PropertyEditor>>;
+    const PropertyEditorsMap_t &defaultPropertyEditors();
 } // namespace internal
 
 class PropertyEditor

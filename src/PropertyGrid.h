@@ -61,9 +61,9 @@ signals:
     void propertyValueChanged(const PM::PropertyContext &context);
 
 private: // stable internal functions
-    void replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::unique_ptr<PropertyEditor> &&editor);
+    void replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::shared_ptr<PropertyEditor> &&editor);
 
-    void addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor);
+    void addPropertyEditor_impl(TypeId typeId, std::shared_ptr<PropertyEditor> &&editor);
 
 private:
     PropertyGridPrivate *d;

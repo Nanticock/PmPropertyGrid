@@ -484,7 +484,11 @@ QSize internal::PropertyGridItemDelegate::sizeHint(const QStyleOptionViewItem &o
     return result;
 }
 
-PropertyGridPrivate::PropertyGridPrivate(PropertyGrid *q) : q(q), ui(new Ui::PropertyGrid()), tableViewItemDelegate(q)
+PropertyGridPrivate::PropertyGridPrivate(PropertyGrid *q) :
+    q(q),
+    ui(new Ui::PropertyGrid()),
+    tableViewItemDelegate(q),
+    m_propertyEditors(internal::defaultPropertyEditors())
 {
 }
 
@@ -716,7 +720,7 @@ QStringList PropertyGrid::propertyNames() const
     return d->m_model.getPropertiesNames();
 }
 
-void PropertyGrid::replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::unique_ptr<PropertyEditor> &&editor)
+void PropertyGrid::replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId newEditorTypeId, std::shared_ptr<PropertyEditor> &&editor)
 {
     if (d->m_propertyEditors.find(oldEditorTypeId) == d->m_propertyEditors.end())
     {
@@ -733,8 +737,12 @@ void PropertyGrid::replacePropertyEditor_impl(TypeId oldEditorTypeId, TypeId new
     addPropertyEditor_impl(newEditorTypeId, std::move(editor));
 }
 
-void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::unique_ptr<PropertyEditor> &&editor)
+void PropertyGrid::addPropertyEditor_impl(TypeId typeId, std::shared_ptr<PropertyEditor> &&editor)
 {
+    // If the new editor already exists then there is no need to add it again
+    if (d->m_propertyEditors.find(typeId) != d->m_propertyEditors.end())
+        return;
+
     d->m_propertyEditors.emplace(typeId, std::move(editor));
 
     // Force all property entries in the view to get calculated using the updated editors list

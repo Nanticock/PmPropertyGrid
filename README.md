@@ -71,14 +71,6 @@ int main(int argc, char *argv[])
     QApplication app(argc, argv);
     
     PM::PropertyGrid propertyGrid;
-    //
-    // ONLY FOR NOW...
-    //
-    // Add editors for the property types that you're using
-    // This won't be required in the future
-    // 
-    propertyGrid.addPropertyEditor<PM::BoolPropertyEditor>();
-    propertyGrid.addPropertyEditor<PM::ColorPropertyEditor>();
     
     // Add simple properties
     propertyGrid.addProperty("Name", QString("My Object"));
