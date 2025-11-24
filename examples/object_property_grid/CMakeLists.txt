@@ -10,6 +10,7 @@ add_executable(object_property_grid
     main.cpp
     ObjectPropertyGrid.h ObjectPropertyGrid.cpp
     Car.h Car.cpp
+    MainWindow.h MainWindow.cpp MainWindow.ui
 )
 
 target_link_libraries(object_property_grid

@@ -1,5 +1,6 @@
-#include "Car.h"
-#include "ObjectPropertyGrid.h"
+// #include "Car.h"
+// #include "ObjectPropertyGrid.h"
+#include "MainWindow.h"
 
 #include <QApplication>
 
@@ -7,25 +8,28 @@ int main(int argc, char **argv)
 {
     QApplication app(argc, argv);
 
-    Car *car1 = new Car();
-    car1->setBrand("Tesla");
-    car1->setYear(2025);
-    car1->setElectric(true);
+    MainWindow mainWindow;
+    mainWindow.show();
 
-    Car *car2 = new Car();
-    car2->setBrand("BMW");
-    car2->setYear(2025);
-    car2->setElectric(true);
+    // Car *car1 = new Car();
+    // car1->setBrand("Tesla");
+    // car1->setYear(2025);
+    // car1->setElectric(true);
 
-    ObjectPropertyGrid *grid = new ObjectPropertyGrid();
+    // Car *car2 = new Car();
+    // car2->setBrand("BMW");
+    // car2->setYear(2025);
+    // car2->setElectric(true);
 
-    // Single object
-    grid->setSelectedObject(car1);
+    // ObjectPropertyGrid *grid = new ObjectPropertyGrid();
 
-    // Multiple objects
-    grid->setSelectedObjects({car1, car2});
+    // // Single object
+    // grid->setSelectedObject(car1);
 
-    grid->show();
+    // // Multiple objects
+    // grid->setSelectedObjects({car1, car2});
+
+    // grid->show();
 
     return app.exec();
 }
