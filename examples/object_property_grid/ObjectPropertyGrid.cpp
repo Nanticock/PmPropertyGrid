@@ -54,6 +54,16 @@ static QVariant getMergedPropertyValue(const QList<QObject *> &objects, const QM
     return firstValue;
 }
 
+static PM::Property createGridProperty(const QMetaProperty &metaObjectProperty)
+{
+    PM::Property result(metaObjectProperty.name(), metaObjectProperty.type());
+
+    if (!metaObjectProperty.isWritable())
+        result.addAttribute(PM::ReadOnlyAttribute());
+
+    return result;
+}
+
 ObjectPropertyGrid::ObjectPropertyGrid(QWidget *parent) : PM::PropertyGrid(parent)
 {
 }
@@ -97,17 +107,16 @@ void ObjectPropertyGrid::updateProperties()
 
     for (const QMetaProperty &property : commonProperties)
     {
-        const QString name = property.name();
         const QVariant propertyValue = getMergedPropertyValue(m_objects, property);
 
-        addProperty(PM::Property(name, property.type()), propertyValue);
+        addProperty(createGridProperty(property), propertyValue);
 
         // Connect changes back to all objects
         connect(this, &PM::PropertyGrid::propertyValueChanged, this,
-                [this, name](const PM::PropertyContext &context)
+                [this](const PM::PropertyContext &context)
                 {
                     for (QObject *obj : qAsConst(m_objects))
-                        obj->setProperty(name.toUtf8().constData(), context.value());
+                        obj->setProperty(context.property().name().toUtf8().constData(), context.value());
                 });
     }
 }
