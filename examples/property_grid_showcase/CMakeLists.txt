@@ -11,5 +11,6 @@ add_executable(property_grid_showcase
 )
 
 target_link_libraries(property_grid_showcase
-    PM::PropertyGrid
+    PRIVATE
+        PM::PropertyGrid
 )
