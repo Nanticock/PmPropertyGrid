@@ -2,6 +2,58 @@
 
 #include <QMetaProperty>
 
+// Return list of all common readable properties across selected objects
+static QList<QMetaProperty> getCommonProperties(const QList<QObject *> &objects)
+{
+    QList<QMetaProperty> result;
+    if (objects.isEmpty())
+        return result;
+
+    const QMetaObject *meta = objects.first()->metaObject();
+    for (int i = 0; i < meta->propertyCount(); ++i)
+    {
+        QMetaProperty prop = meta->property(i);
+        if (!prop.isReadable())
+            continue;
+
+        const char *name = prop.name();
+        bool common = true;
+        for (QObject *obj : objects)
+        {
+            if (obj->metaObject()->indexOfProperty(name) >= 0)
+                continue;
+
+            common = false;
+            break;
+        }
+
+        if (common)
+            result.append(prop);
+    }
+
+    return result;
+}
+
+// Return merged value for a given property across selected objects
+static QVariant getMergedPropertyValue(const QList<QObject *> &objects, const QMetaProperty &prop)
+{
+    if (objects.isEmpty())
+        return QVariant();
+
+    const char *name = prop.name();
+    QVariant firstValue = objects.first()->property(name);
+
+    for (QObject *obj : objects)
+    {
+        if (obj->property(name) == firstValue)
+            continue;
+
+        return QVariant(); // blank if different
+    }
+
+    return firstValue;
+}
+
 ObjectPropertyGrid::ObjectPropertyGrid(QWidget *parent) : PM::PropertyGrid(parent)
 {
 }
@@ -40,45 +92,15 @@ void ObjectPropertyGrid::updateProperties()
     if (m_objects.isEmpty())
         return;
 
-    const QMetaObject *meta = m_objects.first()->metaObject();
+    // Use helper functions
+    const QList<QMetaProperty> commonProperties = getCommonProperties(m_objects);
 
-    for (int i = 0; i < meta->propertyCount(); ++i)
+    for (const QMetaProperty &property : commonProperties)
     {
-        QMetaProperty prop = meta->property(i);
-        if (!prop.isReadable())
-            continue;
+        const QString name = property.name();
+        const QVariant propertyValue = getMergedPropertyValue(m_objects, property);
 
-        const QString name = prop.name();
-
-        // Check if property exists on all objects
-        bool common = true;
-        for (QObject *obj : qAsConst(m_objects))
-        {
-            if (obj->metaObject()->indexOfProperty(name.toUtf8().constData()) < 0)
-            {
-                common = false;
-                break;
-            }
-        }
-        if (!common)
-            continue;
-
-        // Determine merged value
-        QVariant firstValue = m_objects.first()->property(name.toUtf8().constData());
-        bool allSame = true;
-        for (QObject *obj : qAsConst(m_objects))
-        {
-            if (obj->property(name.toUtf8().constData()) != firstValue)
-            {
-                allSame = false;
-
-                break;
-            }
-        }
-
-        PM::Property property(name, prop.type());
-        const QVariant displayValue = allSame ? firstValue : QVariant(); // blank if different
-        addProperty(property, displayValue);
+        addProperty(PM::Property(name, property.type()), propertyValue);
 
         // Connect changes back to all objects
         connect(this, &PM::PropertyGrid::propertyValueChanged, this,
