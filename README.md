@@ -20,45 +20,6 @@ This library provides a flexible and customizable property editor that displays 
 > 
 > Feel free to use it, report issues, and contribute! The core functionality works well, and the API won't change in ways that break your code.
 
-## Features
-
-- **Comprehensive Type Support**: Planned Built-in support for all major Qt types including:
-  - [x] **Basic types**: `int`, `bool`, `QString`, `double`
-  - [ ] **Geometric types**: `QPoint`, `QPointF`, `QSize`, `QSizeF`, `QRect`, `QRectF`, `QLine`, `QLineF`
-  - [x] **Graphics types**: `QColor`, `QFont`, `QIcon`, `QPixmap`, `QBitmap`, `QImage`
-  - [ ] **Advanced types**: `QVector2D`, `QVector3D`, `QVector4D`, `QMatrix4x4`, `QPolygon`, `QPolygonF`
-  - [x] **Date/Time types**: `QDate`, `QTime`, `QDateTime`
-  - [ ] **UI types** (partial): `QKeySequence`, `QCursor`, `QChar`
-  - [ ] **Object types**: `QObject*` and custom enums
-
-- **Property Attributes**: Rich attribute system for enhanced property configuration:
-  - `DescriptionAttribute`: Add helpful descriptions to properties
-  - `DefaultValueAttribute`: Define default values for properties
-  - `CategoryAttribute`: Organize properties into collapsible categories
-  - `ReadOnlyAttribute`: Mark properties as read-only
-
-- **Flexible API**: Multiple ways to add properties:
-  - Simple property addition with automatic type detection
-  - Detailed property configuration with attributes
-  - Batch property addition with categories
-
-- **Interactive Features**:
-  - Collapsible categories for better organization
-  - Real-time property value change notifications
-  - Support for custom property editors
-  - Responsive tree-based layout
-
-- **Cross-Platform**: Compatible with Qt 5.9+ on Windows, macOS, and Linux
-
-- **Wide Qt Compatibility**: Designed to work with all Qt versions from Qt 5.9 onward, ensuring maximum compatibility across projects
-
-## Requirements
-
-- **CMake**: 3.10 or higher
-- **Qt**: 5.9+ (Widgets module required)
-- **C++ Standard**: C++17 (can work on C++14 if you have a replacement implementation for `std::variant`)
-- **Compiler**: MSVC 2019, GCC, or Clang with C++17 support
-
 ## Quick Start
 
 ```cpp
@@ -98,6 +59,45 @@ int main(int argc, char *argv[])
     return app.exec();
 }
 ```
+
+## Features
+
+- **Comprehensive Type Support**: Planned Built-in support for all major Qt types including:
+  - [x] **Basic types**: `int`, `bool`, `QString`, `double`
+  - [ ] **Geometric types**: `QPoint`, `QPointF`, `QSize`, `QSizeF`, `QRect`, `QRectF`, `QLine`, `QLineF`
+  - [x] **Graphics types**: `QColor`, `QFont`, `QIcon`, `QPixmap`, `QBitmap`, `QImage`
+  - [ ] **Advanced types**: `QVector2D`, `QVector3D`, `QVector4D`, `QMatrix4x4`, `QPolygon`, `QPolygonF`
+  - [x] **Date/Time types**: `QDate`, `QTime`, `QDateTime`
+  - [ ] **UI types** (partial): `QKeySequence`, `QCursor`, `QChar`
+  - [ ] **Object types**: `QObject*` and custom enums
+
+- **Property Attributes**: Rich attribute system for enhanced property configuration:
+  - `DescriptionAttribute`: Add helpful descriptions to properties
+  - `DefaultValueAttribute`: Define default values for properties
+  - `CategoryAttribute`: Organize properties into collapsible categories
+  - `ReadOnlyAttribute`: Mark properties as read-only
+
+- **Flexible API**: Multiple ways to add properties:
+  - Simple property addition with automatic type detection
+  - Detailed property configuration with attributes
+  - Batch property addition with categories
+
+- **Interactive Features**:
+  - Collapsible categories for better organization
+  - Real-time property value change notifications
+  - Support for custom property editors
+  - Responsive tree-based layout
+
+- **Cross-Platform**: Compatible with Qt 5.9+ on Windows, macOS, and Linux
+
+- **Wide Qt Compatibility**: Designed to work with all Qt versions from Qt 5.9 onward, ensuring maximum compatibility across projects
+
+## Requirements
+
+- **CMake**: 3.10 or higher
+- **Qt**: 5.9+ (Widgets module required)
+- **C++ Standard**: C++17 (can work on C++14 if you have a replacement implementation for `std::variant`)
+- **Compiler**: MSVC 2019, GCC, or Clang with C++17 support
 
 ## API Overview
 

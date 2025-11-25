@@ -1,1 +1,2 @@
 add_subdirectory(property_grid_showcase)
+add_subdirectory(object_property_grid)
