@@ -9,7 +9,7 @@ find_package(Qt${QT_VERSION_MAJOR} REQUIRED COMPONENTS Core)
 add_executable(object_property_grid
     main.cpp
     ObjectPropertyGrid.h ObjectPropertyGrid.cpp
-    Car.h Car.cpp
+
     MainWindow.h MainWindow.cpp MainWindow.ui
 )
 

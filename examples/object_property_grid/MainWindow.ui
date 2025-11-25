@@ -7,11 +7,11 @@
     <x>0</x>
     <y>0</y>
     <width>800</width>
-    <height>600</height>
+    <height>800</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>ObjectsPropertyGrid example</string>
   </property>
   <widget class="QWidget" name="centralwidget">
    <widget class="QLineEdit" name="lineEdit">
@@ -138,6 +138,9 @@
      <property name="text">
       <string>Option1</string>
      </property>
+     <property name="checked">
+      <bool>true</bool>
+     </property>
     </widget>
     <widget class="QRadioButton" name="radioButton_2">
      <property name="geometry">
@@ -181,7 +184,7 @@
   <widget class="QDockWidget" name="dockWidget">
    <property name="minimumSize">
     <size>
-     <width>300</width>
+     <width>500</width>
      <height>95</height>
     </size>
    </property>
@@ -202,7 +205,7 @@
   <widget class="QDockWidget" name="dockWidget_2">
    <property name="minimumSize">
     <size>
-     <width>300</width>
+     <width>500</width>
      <height>40</height>
     </size>
    </property>

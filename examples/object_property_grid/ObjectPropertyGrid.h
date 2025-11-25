@@ -9,17 +9,18 @@ class ObjectPropertyGrid : public PM::PropertyGrid
 public:
     explicit ObjectPropertyGrid(QWidget *parent = nullptr);
 
-    QList<QObject *> selectedObjects() const;
+    QObject *selectedObject() const;
     void setSelectedObject(QObject *object);
 
-    QObject *selectedObject() const;
-    void setSelectedObjects(const QList<QObject *> &objects);
+    QObjectList selectedObjects() const;
+    void setSelectedObjects(const QObjectList &objects);
 
 private:
     void updateProperties();
 
 private:
-    QList<QObject *> m_objects;
+    QObjectList m_objects;
+    QVector<QMetaObject::Connection> m_objectsConnections;
 };
 
 #endif // OBJECTPROPERTYGRID_H

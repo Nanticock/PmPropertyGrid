@@ -3,7 +3,8 @@
 #include <QMetaProperty>
 
 // Return list of all common readable properties across selected objects
-static QList<QMetaProperty> getCommonProperties(const QList<QObject *> &objects)
+// only properties that are common between all objects gets returned
+static QList<QMetaProperty> getCommonProperties(const QObjectList &objects)
 {
     QList<QMetaProperty> result;
     if (objects.isEmpty())
@@ -35,13 +36,14 @@ static QList<QMetaProperty> getCommonProperties(const QList<QObject *> &objects)
 }
 
 // Return merged value for a given property across selected objects
-static QVariant getMergedPropertyValue(const QList<QObject *> &objects, const QMetaProperty &prop)
+// If the property value is the same then we return it, if it's different we return an invalid variant
+static QVariant getMergedPropertyValue(const QObjectList &objects, const QMetaProperty &prop)
 {
     if (objects.isEmpty())
         return QVariant();
 
     const char *name = prop.name();
-    QVariant firstValue = objects.first()->property(name);
+    const QVariant firstValue = objects.first()->property(name);
 
     for (QObject *obj : objects)
     {
@@ -78,14 +80,14 @@ void ObjectPropertyGrid::setSelectedObject(QObject *object)
     updateProperties();
 }
 
-void ObjectPropertyGrid::setSelectedObjects(const QList<QObject *> &objects)
+void ObjectPropertyGrid::setSelectedObjects(const QObjectList &objects)
 {
     m_objects = objects;
 
     updateProperties();
 }
 
-QList<QObject *> ObjectPropertyGrid::selectedObjects() const
+QObjectList ObjectPropertyGrid::selectedObjects() const
 {
     return m_objects;
 }
@@ -99,24 +101,26 @@ void ObjectPropertyGrid::updateProperties()
 {
     clearProperties();
 
+    for (const auto &connection : qAsConst(m_objectsConnections))
+        disconnect(connection);
+    m_objectsConnections.clear();
+
     if (m_objects.isEmpty())
         return;
 
-    // Use helper functions
     const QList<QMetaProperty> commonProperties = getCommonProperties(m_objects);
-
-    for (const QMetaProperty &property : commonProperties)
+    for (const QMetaProperty &metaProperty : commonProperties)
     {
-        const QVariant propertyValue = getMergedPropertyValue(m_objects, property);
+        const PM::Property gridProperty = createGridProperty(metaProperty);
+        const QVariant propertyValue = getMergedPropertyValue(m_objects, metaProperty);
+        addProperty(gridProperty, propertyValue);
 
-        addProperty(createGridProperty(property), propertyValue);
-
-        // Connect changes back to all objects
-        connect(this, &PM::PropertyGrid::propertyValueChanged, this,
-                [this](const PM::PropertyContext &context)
-                {
-                    for (QObject *obj : qAsConst(m_objects))
-                        obj->setProperty(context.property().name().toUtf8().constData(), context.value());
-                });
+        // make sure to propagate properties values that are changed in the UI to the underlying objects
+        m_objectsConnections << connect(this, &PM::PropertyGrid::propertyValueChanged, this,
+                                        [this](const PM::PropertyContext &context)
+                                        {
+                                            for (QObject *obj : qAsConst(m_objects))
+                                                obj->setProperty(context.property().name().toUtf8().constData(), context.value());
+                                        });
     }
 }
