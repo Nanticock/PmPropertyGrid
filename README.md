@@ -1,4 +1,4 @@
-# PmPropertyGrid
+# PmPropertyGrid: A Powerful Qt Property Grid & Editor for C++
 
 [![Windows Build](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/windows.yml/badge.svg)](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/windows.yml)
 [![macOS Build](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/macos.yml/badge.svg)](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/macos.yml)
@@ -9,15 +9,7 @@ This library provides a flexible and customizable property editor that displays 
 
 ![Property Grid Showcase](docs/images/showcase_image.png)
 
-> **⚠️ Early Release Notice**
-> 
 > This project is shared in connection with the YouTube video: [Building a Property Grid Widget in Qt/C++](https://youtu.be/O-O_c6Ymz8w?si=iEY5bG8kDndACx_v) Published on C++Online 2025
-
-> **Current Status:**
-> - ✅ **API is stable** - Safe to use in your projects without worrying about breaking changes
-> - ⚠️ **Implementation is not fully polished** - Some features may have rough edges
-> - 🚧 **Work in progress** - Actively being improved to become production-ready
-> 
 > Feel free to use it, report issues, and contribute! The core functionality works well, and the API won't change in ways that break your code.
 
 ## Quick Start
@@ -60,7 +52,7 @@ int main(int argc, char *argv[])
 }
 ```
 
-## Features
+## Key Features of this Qt Property Grid
 
 - **Comprehensive Type Support**: Planned Built-in support for all major Qt types including:
   - [x] **Basic types**: `int`, `bool`, `QString`, `double`
@@ -197,6 +189,23 @@ PmPropertyGrid/
 ├── cmake/                      # CMake modules (coming soon)
 └── tests/                      # Unit tests (coming soon)
 ```
+
+## Why choose PmPropertyGrid over other property browsers?
+
+Unlike older or unmaintained property browsers, **PmPropertyGrid** offers a modern, stable API designed for longevity without compromising on ease of use. While other libraries often feel like "black boxes," this project is built on the same public API available to you, making it fully extensible.
+
+### Key Advantages
+
+- **First-Class Attributes, Not Text-Keys:**</br>
+    Most property editors rely on string-based key-value pairs for configuration, which is error-prone and hard to discover. In PmPropertyGrid, attributes are first-class citizens. This type-safe approach prevents misuse and makes the API self-documenting.
+- **Generic & Declarative Design:**</br>
+    While it works seamlessly with Qt, it isn't strictly tied to `QObject` properties. It is a generic C++ property grid designed to display any list of properties declaratively. It brings the flexibility of the .NET WinForms PropertyGrid to the C++ and Qt world.
+- **Powerful QObject Support:**</br>
+    We include a full-fledged example showing how to display and edit properties for multiple `QObjects` simultaneously. It mimics the behavior of the Visual Studio WinForms designer—allowing interactive, multi-object editing—and can be dropped into your project without needing to understand Qt's internal property plumbing.
+- **Unrivaled Stability (CI/CD):**</br>
+    We provide a guarantee no other property grid offers: an extensive CI/CD matrix testing every commit across Windows, Linux, and macOS on both ARM and Intel architectures.
+- **Future-Proof (Qt5 & Qt6):**</br>
+    This is the only property grid that natively supports both Qt5 and Qt6 using the exact same API. We rely on zero deprecated Qt functionalities, ensuring your UI remains stable as you migrate between framework versions.
 
 ## License
 
