@@ -1,3 +1,5 @@
+<meta name="google-site-verification" content="fhX7ULkBIWbwJiK5Dk6MlGpjqJooxZTe0eDqju-5vEo" />
+
 # PmPropertyGrid: A Powerful Qt Property Grid & Editor for C++
 
 [![Windows Build](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/windows.yml/badge.svg)](https://github.com/Nanticock/PmPropertyGrid/actions/workflows/windows.yml)
