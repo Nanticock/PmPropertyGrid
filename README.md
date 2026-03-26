@@ -1,4 +1,6 @@
+<head>
 <meta name="google-site-verification" content="fhX7ULkBIWbwJiK5Dk6MlGpjqJooxZTe0eDqju-5vEo" />
+</head>
 
 # PmPropertyGrid: A Powerful Qt Property Grid & Editor for C++
 
