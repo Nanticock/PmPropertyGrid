@@ -38,6 +38,11 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
+      # Qt6 pre-built binaries reference AGL.framework which was removed in macOS 10.15.
+      # Weak-linking allows the build to succeed on macOS 26 when AGL is absent at link time.
+      cmake_extra_flags: >-
+        -DCMAKE_EXE_LINKER_FLAGS="-weak_framework AGL"
+        -DCMAKE_SHARED_LINKER_FLAGS="-weak_framework AGL"
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
