@@ -29,21 +29,22 @@ jobs:
       - name: Set reusable strings
         id: strings
         shell: bash
-        run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-          # When on an ARM runner targeting x86_64 Qt (clang_64), emit x86_64 output via
-          # -DCMAKE_OSX_ARCHITECTURES. cmake/build tools stay as native ARM64 binaries;
-          # only the compiled output is x86_64. Rosetta handles running x86_64 test binaries.
-          if [[ "${{ runner.os }}" == "macOS" && "${{ runner.arch }}" == "ARM64" && "${{ inputs.qt_arch }}" == "clang_64" ]]; then
-            echo "osx_arch_flag=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_OUTPUT"
-          else
-            echo "osx_arch_flag=" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Install Rosetta
-        # Needed so macOS can execute the x86_64 binaries produced when cross-compiling for Intel
+      - name: Set up environment for Intel (Rosetta 2)
+        # ARM runner targeting x86_64 Qt (clang_64): cross-compile for Intel and install
+        # Rosetta so the resulting x86_64 test binaries run transparently under emulation
         if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch == 'clang_64'
-        run: softwareupdate --install-rosetta --agree-to-license
+        shell: bash
+        run: |
+          softwareupdate --install-rosetta --agree-to-license
+          echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_ENV"
+
+      - name: Set up environment for Apple Silicon
+        # Native ARM64 build; set architecture explicitly for clarity
+        if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch != 'clang_64'
+        shell: bash
+        run: echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=arm64" >> "$GITHUB_ENV"
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -59,7 +60,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
           -DCMAKE_BUILD_TYPE=Release
-          ${{ steps.strings.outputs.osx_arch_flag }}
+          ${{ env.CMAKE_ARCH_FLAGS }}
           -S ${{ github.workspace }}
 
       - name: Build
