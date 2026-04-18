@@ -63,6 +63,7 @@ jobs:
         echo "QT_ROOT_DIR=$QT_DIR" >> "$GITHUB_ENV"
         echo "Qt${QT_MAJOR}_DIR=$QT_DIR/lib/cmake/Qt${QT_MAJOR}" >> "$GITHUB_ENV"
         echo "QT_PLUGIN_PATH=$QT_DIR/plugins" >> "$GITHUB_ENV"
+        echo "CMAKE_PREFIX_PATH=$QT_DIR" >> "$GITHUB_ENV"
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
