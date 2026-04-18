@@ -59,13 +59,15 @@ jobs:
         run: ${{ inputs.qt_install_script }}
 
       - name: Configure CMake
-        run: >
-          ${{ env.ARCH_PREFIX }} cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
-          -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
-          -DCMAKE_BUILD_TYPE=Release
-          ${{ env.CMAKE_ARCH_FLAGS }}
-          -S ${{ github.workspace }}
+        shell: bash
+        run: |
+          cmake -B "${{ steps.strings.outputs.build-output-dir }}" \
+            -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} \
+            -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }} \
+            -DCMAKE_BUILD_TYPE=Release \
+            ${{ env.CMAKE_ARCH_FLAGS }} \
+            ${CMAKE_PREFIX_PATH:+-DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"} \
+            -S "${{ github.workspace }}"
 
       - name: Build
         run: ${{ env.ARCH_PREFIX }} cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
