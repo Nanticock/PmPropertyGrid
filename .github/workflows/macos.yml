@@ -41,12 +41,15 @@ jobs:
       target_arch: x86_64
       qt_install_script: |
         softwareupdate --install-rosetta --agree-to-license
-        python3 -m pip install aqtinstall
+        python3 -m venv /tmp/aqt-venv
+        source /tmp/aqt-venv/bin/activate
+        pip install aqtinstall --quiet
         QT_BASE="${QT_VERSION%.*}"
         QT_MAJOR="${QT_VERSION%%.*}"
-        RESOLVED=$(aqt list-qt mac desktop --arch clang_64 2>/dev/null | tr ' ' '\n' | grep "^${QT_BASE}\." | sort -t. -k3 -n | tail -1)
+        # aqt list-qt returns all available versions; no --arch flag at the list stage
+        RESOLVED=$(aqt list-qt mac desktop 2>/dev/null | tr ' ' '\n' | grep "^${QT_BASE}\." | sort -t. -k3 -n | tail -1)
         if [[ -z "$RESOLVED" ]]; then
-          echo "::error::Could not resolve Qt version matching $QT_VERSION for clang_64" >&2
+          echo "::error::Could not resolve a Qt version matching $QT_VERSION" >&2
           exit 1
         fi
         QT_INSTALL_DIR="$HOME/Qt"
