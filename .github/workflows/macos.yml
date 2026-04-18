@@ -40,11 +40,9 @@ jobs:
       qt_version: ${{ matrix.qt_version }}
       target_arch: x86_64
       qt_install_script: |
-        # Install Rosetta if not already present; exits non-zero when already installed so we swallow the error
+        # Install Rosetta so that the x86_64 Qt tools (moc, uic) and x86_64 test
+        # binaries can run on the ARM64 runner. Exits non-zero when already installed.
         softwareupdate --install-rosetta --agree-to-license || true
-        # Run cmake, build and tests under arch -x86_64 so Qt6's cmake config sees the
-        # correct host architecture and doesn't reject the ARM64/x86_64 mismatch
-        echo "ARCH_PREFIX=arch -x86_64" >> "$GITHUB_ENV"
         python3 -m venv /tmp/aqt-venv
         source /tmp/aqt-venv/bin/activate
         pip install aqtinstall --quiet
@@ -64,6 +62,11 @@ jobs:
         echo "Qt${QT_MAJOR}_DIR=$QT_DIR/lib/cmake/Qt${QT_MAJOR}" >> "$GITHUB_ENV"
         echo "QT_PLUGIN_PATH=$QT_DIR/plugins" >> "$GITHUB_ENV"
         echo "CMAKE_PREFIX_PATH=$QT_DIR" >> "$GITHUB_ENV"
+        # cmake runs natively as ARM64; the cross-compilation target is x86_64 via
+        # CMAKE_OSX_ARCHITECTURES. Qt6 checks that the host arch matches the installed
+        # Qt's arch (clang_64 = x86_64) and rejects the ARM64 host — suppress that check.
+        # The compiled output and Qt tools are x86_64 and run automatically via Rosetta.
+        echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=x86_64 -DQT_NO_FORCE_ARCHITECTURE_CHECK=TRUE" >> "$GITHUB_ENV"
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
