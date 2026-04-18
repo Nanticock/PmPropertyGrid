@@ -38,11 +38,33 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
-      # Qt6 pre-built binaries reference AGL.framework which was removed in macOS 10.15.
-      # Weak-linking allows the build to succeed on macOS 26 when AGL is absent at link time.
-      cmake_extra_flags: >-
-        -DCMAKE_EXE_LINKER_FLAGS="-weak_framework AGL"
-        -DCMAKE_SHARED_LINKER_FLAGS="-weak_framework AGL"
+      qt_install_script: |
+        python3 -m venv /tmp/aqt-venv
+        source /tmp/aqt-venv/bin/activate
+        pip install aqtinstall --quiet
+        QT_BASE="${QT_VERSION%.*}"
+        QT_MAJOR="${QT_VERSION%%.*}"
+        RESOLVED=$(aqt list-qt mac desktop 2>/dev/null | tr ' ' '\n' | grep "^${QT_BASE}\." | sort -t. -k3 -n | tail -1)
+        if [[ -z "$RESOLVED" ]]; then
+          echo "::error::Could not resolve a Qt version matching $QT_VERSION" >&2
+          exit 1
+        fi
+        QT_INSTALL_DIR="$HOME/Qt"
+        aqt install-qt mac desktop "$RESOLVED" clang_64 --outputdir "$QT_INSTALL_DIR"
+        QT_DIR="$QT_INSTALL_DIR/$RESOLVED/clang_64"
+        echo "$QT_DIR/bin" >> "$GITHUB_PATH"
+        echo "QT_ROOT_DIR=$QT_DIR" >> "$GITHUB_ENV"
+        echo "Qt${QT_MAJOR}_DIR=$QT_DIR/lib/cmake/Qt${QT_MAJOR}" >> "$GITHUB_ENV"
+        echo "QT_PLUGIN_PATH=$QT_DIR/plugins" >> "$GITHUB_ENV"
+        echo "CMAKE_PREFIX_PATH=$QT_DIR" >> "$GITHUB_ENV"
+        # Qt6 pre-built binaries embed a reference to AGL.framework in their cmake target
+        # files. AGL was removed in macOS 10.15 and is absent on macos-26-intel.
+        # Patch it out of the installed cmake files before cmake runs so it never
+        # appears as a link dependency. Qt5 does not reference AGL so this is a no-op there.
+        if [[ "$QT_MAJOR" == "6" ]]; then
+          find "$QT_DIR/lib/cmake" -name "*.cmake" -print0 \
+            | xargs -0 sed -i '' 's/-framework AGL//g'
+        fi
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
