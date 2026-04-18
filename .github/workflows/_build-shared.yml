@@ -15,15 +15,11 @@ on:
       qt_version:
         required: true
         type: string
-      qt_arch:
-        required: false
-        type: string
-        default: ''
       target_arch:
         required: false
         type: string
         default: ''
-      setup_script:
+      qt_install_script:
         required: false
         type: string
         default: ''
@@ -39,23 +35,28 @@ jobs:
         shell: bash
         run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Run environment setup script
-        if: inputs.setup_script != ''
-        shell: bash
-        run: ${{ inputs.setup_script }}
-
       - name: Set up target architecture
         if: inputs.target_arch != ''
         shell: bash
         run: echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=${{ inputs.target_arch }}" >> "$GITHUB_ENV"
 
       - name: Install Qt
+        if: inputs.qt_install_script == ''
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ inputs.qt_version }}
-          arch: ${{ inputs.qt_arch }}
           install-deps: 'true'
           set-env: 'true'
+
+      - name: Install Qt (custom)
+        # Runs when qt_install_script is provided. The script is fully responsible for
+        # installing Qt and configuring the environment (PATH, QT_ROOT_DIR, Qt_DIR, etc.).
+        # QT_VERSION is available as an environment variable with the requested version string.
+        if: inputs.qt_install_script != ''
+        shell: bash
+        env:
+          QT_VERSION: ${{ inputs.qt_version }}
+        run: ${{ inputs.qt_install_script }}
 
       - name: Configure CMake
         run: >

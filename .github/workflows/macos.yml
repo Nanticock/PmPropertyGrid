@@ -38,9 +38,24 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
-      qt_arch: clang_64
       target_arch: x86_64
-      setup_script: 'softwareupdate --install-rosetta --agree-to-license'
+      qt_install_script: |
+        softwareupdate --install-rosetta --agree-to-license
+        python3 -m pip install aqtinstall
+        QT_BASE="${QT_VERSION%.*}"
+        QT_MAJOR="${QT_VERSION%%.*}"
+        RESOLVED=$(aqt list-qt mac desktop --arch clang_64 2>/dev/null | tr ' ' '\n' | grep "^${QT_BASE}\." | sort -t. -k3 -n | tail -1)
+        if [[ -z "$RESOLVED" ]]; then
+          echo "::error::Could not resolve Qt version matching $QT_VERSION for clang_64" >&2
+          exit 1
+        fi
+        QT_INSTALL_DIR="$HOME/Qt"
+        aqt install-qt mac desktop "$RESOLVED" clang_64 --outputdir "$QT_INSTALL_DIR"
+        QT_DIR="$QT_INSTALL_DIR/$RESOLVED/clang_64"
+        echo "$QT_DIR/bin" >> "$GITHUB_PATH"
+        echo "QT_ROOT_DIR=$QT_DIR" >> "$GITHUB_ENV"
+        echo "Qt${QT_MAJOR}_DIR=$QT_DIR/lib/cmake/Qt${QT_MAJOR}" >> "$GITHUB_ENV"
+        echo "QT_PLUGIN_PATH=$QT_DIR/plugins" >> "$GITHUB_ENV"
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
