@@ -39,6 +39,8 @@ jobs:
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
       qt_arch: clang_64
+      target_arch: x86_64
+      setup_script: 'softwareupdate --install-rosetta --agree-to-license'
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
@@ -65,3 +67,4 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
+      target_arch: arm64

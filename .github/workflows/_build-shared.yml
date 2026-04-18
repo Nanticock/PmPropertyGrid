@@ -19,6 +19,14 @@ on:
         required: false
         type: string
         default: ''
+      target_arch:
+        required: false
+        type: string
+        default: ''
+      setup_script:
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
@@ -31,20 +39,15 @@ jobs:
         shell: bash
         run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Set up target architecture
-        # Runs only when qt_arch is specified (macOS matrix entries).
-        # clang_64 means the x86_64 Qt variant: cross-compile for Intel and install
-        # Rosetta so the resulting x86_64 test binaries execute under emulation.
-        # Any other non-empty qt_arch value means a native ARM64 build.
-        if: inputs.qt_arch != ''
+      - name: Run environment setup script
+        if: inputs.setup_script != ''
         shell: bash
-        run: |
-          if [[ "${{ inputs.qt_arch }}" == "clang_64" ]]; then
-            softwareupdate --install-rosetta --agree-to-license
-            echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_ENV"
-          else
-            echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=arm64" >> "$GITHUB_ENV"
-          fi
+        run: ${{ inputs.setup_script }}
+
+      - name: Set up target architecture
+        if: inputs.target_arch != ''
+        shell: bash
+        run: echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=${{ inputs.target_arch }}" >> "$GITHUB_ENV"
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
