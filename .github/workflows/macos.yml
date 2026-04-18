@@ -31,88 +31,14 @@ jobs:
             cpp_compiler: g++
           - c_compiler: clang
             cpp_compiler: clang++
-        exclude:
-          # Qt6 pre-built binaries link against AGL.framework, which was removed in
-          # macOS 10.15. The macos-26-intel runner does not ship AGL, so all Qt6 builds
-          # fail at link time with "ld: framework 'AGL' not found".
-          #
-          # Patching Qt's installed cmake files to strip the AGL reference is fragile
-          # and outside the scope of this project. The practical alternatives are:
-          #   1. Use an older runner image that still ships AGL (e.g. macos-13).
-          #   2. Cross-compile for x86_64 from the ARM mac runner (macos-latest)
-          #      using CMAKE_OSX_ARCHITECTURES=x86_64 — Qt6 supports this natively.
-          - qt_version: "6.2.*"
-          - qt_version: "6.5.*"
-          - qt_version: "6.8.*"
 
     uses: ./.github/workflows/_build-shared.yml
     with:
-      os: macos-26-intel
+      os: macos-latest  # ARM runner; Intel x86_64 binaries built and run via Rosetta 2
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
-
-  # Cross-compile Qt6 for Intel (x86_64) from the ARM64 runner via Rosetta 2.
-  # This covers the Qt6 versions excluded from build-macos-intel due to the missing
-  # AGL.framework on macos-26-intel. Qt 6.3+ ship a universal "macos" binary
-  # (x86_64 + ARM64) whose Qt6Config.cmake accepts any host architecture, making
-  # cross-compilation with CMAKE_OSX_ARCHITECTURES=x86_64 work transparently.
-  # Qt 6.2 only has the "clang_64" (x86_64-only) package whose cmake config
-  # actively rejects an ARM64 host, so it is excluded here.
-  build-macos-intel-qt6-rosetta:
-    name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-intel-rosetta
-    needs: get-matrix
-    strategy:
-      fail-fast: false
-      matrix:
-        c_compiler: ${{ fromJson(needs.get-matrix.outputs.compilers_macos) }}
-        qt_version: ${{ fromJson(needs.get-matrix.outputs.qt_versions) }}
-        include:
-          - c_compiler: gcc
-            cpp_compiler: g++
-          - c_compiler: clang
-            cpp_compiler: clang++
-        exclude:
-          # Qt5 is covered by the native Intel job.
-          - qt_version: "5.9.*"
-          - qt_version: "5.12.*"
-          - qt_version: "5.15.*"
-          # Qt 6.2 has no universal "macos" package; cross-compilation from ARM64 is
-          # not possible. It is also excluded from build-macos-intel due to AGL, so
-          # Qt 6.2 Intel builds are simply not feasible on modern macOS runners.
-          - qt_version: "6.2.*"
-
-    uses: ./.github/workflows/_build-shared.yml
-    with:
-      os: macos-latest
-      c_compiler: ${{ matrix.c_compiler }}
-      cpp_compiler: ${{ matrix.cpp_compiler }}
-      qt_version: ${{ matrix.qt_version }}
-      qt_install_script: |
-        # Rosetta 2 lets x86_64 Qt tools (moc, uic) and test binaries run on the ARM64 runner.
-        softwareupdate --install-rosetta --agree-to-license || true
-        python3 -m venv /tmp/aqt-venv
-        source /tmp/aqt-venv/bin/activate
-        pip install aqtinstall --quiet
-        QT_BASE="${QT_VERSION%.*}"
-        QT_MAJOR="${QT_VERSION%%.*}"
-        RESOLVED=$(aqt list-qt mac desktop 2>/dev/null | tr ' ' '\n' | grep "^${QT_BASE}\." | sort -t. -k3 -n | tail -1)
-        if [[ -z "$RESOLVED" ]]; then
-          echo "::error::Could not resolve a Qt version matching $QT_VERSION" >&2
-          exit 1
-        fi
-        QT_INSTALL_DIR="$HOME/Qt"
-        # Always install the universal "macos" package (x86_64 + ARM64). Its cmake
-        # config accepts any host architecture, so CMAKE_OSX_ARCHITECTURES=x86_64
-        # cross-compiles to Intel without any host-arch rejection.
-        aqt install-qt mac desktop "$RESOLVED" macos --outputdir "$QT_INSTALL_DIR"
-        QT_DIR="$QT_INSTALL_DIR/$RESOLVED/macos"
-        echo "$QT_DIR/bin" >> "$GITHUB_PATH"
-        echo "QT_ROOT_DIR=$QT_DIR" >> "$GITHUB_ENV"
-        echo "Qt${QT_MAJOR}_DIR=$QT_DIR/lib/cmake/Qt${QT_MAJOR}" >> "$GITHUB_ENV"
-        echo "QT_PLUGIN_PATH=$QT_DIR/plugins" >> "$GITHUB_ENV"
-        echo "CMAKE_PREFIX_PATH=$QT_DIR" >> "$GITHUB_ENV"
-        echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_ENV"
+      qt_arch: clang_64  # x86_64 Qt; triggers Rosetta install + CMAKE_OSX_ARCHITECTURES=x86_64
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
@@ -135,8 +61,7 @@ jobs:
 
     uses: ./.github/workflows/_build-shared.yml
     with:
-      os: macos-latest
+      os: macos-latest  # Apple Silicon macOS
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
-      target_arch: arm64

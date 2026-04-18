@@ -15,11 +15,7 @@ on:
       qt_version:
         required: true
         type: string
-      target_arch:
-        required: false
-        type: string
-        default: ''
-      qt_install_script:
+      qt_arch:
         required: false
         type: string
         default: ''
@@ -33,45 +29,42 @@ jobs:
       - name: Set reusable strings
         id: strings
         shell: bash
-        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          # When cross-compiling for Intel x86_64 on an ARM64 runner, pass the
+          # architecture flag so CMake emits x86_64 binaries. Rosetta 2 runs them.
+          if [[ "${{ runner.os }}" == "macOS" && "${{ runner.arch }}" == "ARM64" && "${{ inputs.qt_arch }}" == "clang_64" ]]; then
+            echo "osx_arch_flag=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_OUTPUT"
+          else
+            echo "osx_arch_flag=" >> "$GITHUB_OUTPUT"
+          fi
 
-      - name: Set up target architecture
-        if: inputs.target_arch != ''
-        shell: bash
-        run: echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=${{ inputs.target_arch }}" >> "$GITHUB_ENV"
+      - name: Install Rosetta
+        # Required so macOS can execute the x86_64 binaries built when cross-compiling
+        # for Intel on an ARM64 runner.
+        if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch == 'clang_64'
+        run: softwareupdate --install-rosetta --agree-to-license
 
       - name: Install Qt
-        if: inputs.qt_install_script == ''
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ inputs.qt_version }}
+          arch: ${{ inputs.qt_arch }}
           install-deps: 'true'
           set-env: 'true'
 
-      - name: Install Qt (custom)
-        # Runs when qt_install_script is provided. The script is fully responsible for
-        # installing Qt and configuring the environment (PATH, QT_ROOT_DIR, Qt_DIR, etc.).
-        # QT_VERSION is available as an environment variable with the requested version string.
-        if: inputs.qt_install_script != ''
-        shell: bash
-        env:
-          QT_VERSION: ${{ inputs.qt_version }}
-        run: ${{ inputs.qt_install_script }}
-
       - name: Configure CMake
-        shell: bash
-        run: |
-          cmake -B "${{ steps.strings.outputs.build-output-dir }}" \
-            -DCMAKE_C_COMPILER=${{ inputs.c_compiler }} \
-            -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }} \
-            -DCMAKE_BUILD_TYPE=Release \
-            ${{ env.CMAKE_ARCH_FLAGS }} \
-            ${CMAKE_PREFIX_PATH:+-DCMAKE_PREFIX_PATH="$CMAKE_PREFIX_PATH"} \
-            -S "${{ github.workspace }}"
+        run: >
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
+          -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
+          -DCMAKE_BUILD_TYPE=Release
+          ${{ steps.strings.outputs.osx_arch_flag }}
+          -S ${{ github.workspace }}
 
       - name: Build
-        run: ${{ env.ARCH_PREFIX }} cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
 
       - name: Test
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: ${{ env.ARCH_PREFIX }} ctest --build-config Release
+        run: ctest --build-config Release
