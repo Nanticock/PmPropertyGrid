@@ -31,20 +31,20 @@ jobs:
         shell: bash
         run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Set up environment for Intel (Rosetta 2)
-        # ARM runner targeting x86_64 Qt (clang_64): cross-compile for Intel and install
-        # Rosetta so the resulting x86_64 test binaries run transparently under emulation
-        if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch == 'clang_64'
+      - name: Set up target architecture
+        # Runs only when qt_arch is specified (macOS matrix entries).
+        # clang_64 means the x86_64 Qt variant: cross-compile for Intel and install
+        # Rosetta so the resulting x86_64 test binaries execute under emulation.
+        # Any other non-empty qt_arch value means a native ARM64 build.
+        if: inputs.qt_arch != ''
         shell: bash
         run: |
-          softwareupdate --install-rosetta --agree-to-license
-          echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_ENV"
-
-      - name: Set up environment for Apple Silicon
-        # Native ARM64 build; set architecture explicitly for clarity
-        if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch != 'clang_64'
-        shell: bash
-        run: echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=arm64" >> "$GITHUB_ENV"
+          if [[ "${{ inputs.qt_arch }}" == "clang_64" ]]; then
+            softwareupdate --install-rosetta --agree-to-license
+            echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_ENV"
+          else
+            echo "CMAKE_ARCH_FLAGS=-DCMAKE_OSX_ARCHITECTURES=arm64" >> "$GITHUB_ENV"
+          fi
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4

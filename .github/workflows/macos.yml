@@ -34,7 +34,7 @@ jobs:
 
     uses: ./.github/workflows/_build-shared.yml
     with:
-      os: macos-latest  # ARM runner; Intel binaries built and run via Rosetta 2 emulation
+      os: macos-latest
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
@@ -61,7 +61,7 @@ jobs:
 
     uses: ./.github/workflows/_build-shared.yml
     with:
-      os: macos-latest  # Apple Silicon macOS
+      os: macos-latest
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
