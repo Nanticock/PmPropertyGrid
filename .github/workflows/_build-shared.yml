@@ -29,22 +29,21 @@ jobs:
       - name: Set reusable strings
         id: strings
         shell: bash
-        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        run: |
+          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+          # When on an ARM runner targeting x86_64 Qt (clang_64), emit x86_64 output via
+          # -DCMAKE_OSX_ARCHITECTURES. cmake/build tools stay as native ARM64 binaries;
+          # only the compiled output is x86_64. Rosetta handles running x86_64 test binaries.
+          if [[ "${{ runner.os }}" == "macOS" && "${{ runner.arch }}" == "ARM64" && "${{ inputs.qt_arch }}" == "clang_64" ]]; then
+            echo "osx_arch_flag=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_OUTPUT"
+          else
+            echo "osx_arch_flag=" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Install Rosetta
-        # Needed when running on an ARM runner but targeting x86_64 (clang_64) Qt binaries
+        # Needed so macOS can execute the x86_64 binaries produced when cross-compiling for Intel
         if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch == 'clang_64'
         run: softwareupdate --install-rosetta --agree-to-license
-
-      - name: Set arch prefix
-        id: arch
-        shell: bash
-        run: |
-          if [[ "${{ runner.os }}" == "macOS" && "${{ runner.arch }}" == "ARM64" && "${{ inputs.qt_arch }}" == "clang_64" ]]; then
-            echo "cmd=arch -x86_64" >> "$GITHUB_OUTPUT"
-          else
-            echo "cmd=" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
@@ -56,15 +55,16 @@ jobs:
 
       - name: Configure CMake
         run: >
-          ${{ steps.arch.outputs.cmd }} cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
           -DCMAKE_BUILD_TYPE=Release
+          ${{ steps.strings.outputs.osx_arch_flag }}
           -S ${{ github.workspace }}
 
       - name: Build
-        run: ${{ steps.arch.outputs.cmd }} cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
 
       - name: Test
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: ${{ steps.arch.outputs.cmd }} ctest --build-config Release
+        run: ctest --build-config Release
