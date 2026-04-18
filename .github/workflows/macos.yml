@@ -52,6 +52,78 @@ jobs:
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
 
+  # Cross-compile Qt6 for Intel (x86_64) from the ARM64 runner via Rosetta 2.
+  # This covers the Qt6 versions excluded from build-macos-intel due to the missing
+  # AGL.framework on macos-26-intel. Qt 6.0-6.2 ship a clang_64 (x86_64-only) binary;
+  # Qt 6.3+ ship a universal "macos" binary (x86_64 + ARM64), both work with
+  # CMAKE_OSX_ARCHITECTURES=x86_64 on an ARM64 host.
+  build-macos-intel-qt6-rosetta:
+    name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-intel-rosetta
+    needs: get-matrix
+    strategy:
+      fail-fast: false
+      matrix:
+        c_compiler: ${{ fromJson(needs.get-matrix.outputs.compilers_macos) }}
+        qt_version: ${{ fromJson(needs.get-matrix.outputs.qt_versions) }}
+        include:
+          - c_compiler: gcc
+            cpp_compiler: g++
+          - c_compiler: clang
+            cpp_compiler: clang++
+        exclude:
+          # Qt5 is not Qt6; the native Intel job already covers Qt5 on Intel.
+          - qt_version: "5.9.*"
+          - qt_version: "5.12.*"
+          - qt_version: "5.15.*"
+
+    uses: ./.github/workflows/_build-shared.yml
+    with:
+      os: macos-latest
+      c_compiler: ${{ matrix.c_compiler }}
+      cpp_compiler: ${{ matrix.cpp_compiler }}
+      qt_version: ${{ matrix.qt_version }}
+      qt_install_script: |
+        # Rosetta 2 lets x86_64 Qt tools (moc, uic) and test binaries run on ARM64.
+        softwareupdate --install-rosetta --agree-to-license || true
+        python3 -m venv /tmp/aqt-venv
+        source /tmp/aqt-venv/bin/activate
+        pip install aqtinstall --quiet
+        QT_BASE="${QT_VERSION%.*}"
+        QT_MAJOR="${QT_VERSION%%.*}"
+        RESOLVED=$(aqt list-qt mac desktop 2>/dev/null | tr ' ' '\n' | grep "^${QT_BASE}\." | sort -t. -k3 -n | tail -1)
+        if [[ -z "$RESOLVED" ]]; then
+          echo "::error::Could not resolve a Qt version matching $QT_VERSION" >&2
+          exit 1
+        fi
+        # Qt 6.0-6.2 use "clang_64" (x86_64-only); Qt 6.3+ use "macos" (universal).
+        AVAILABLE_ARCHS=$(aqt list-qt mac desktop --arch "$RESOLVED" 2>/dev/null)
+        if echo "$AVAILABLE_ARCHS" | tr ' ' '\n' | grep -q '^clang_64$'; then
+          QT_ARCH="clang_64"
+        elif echo "$AVAILABLE_ARCHS" | tr ' ' '\n' | grep -q '^macos$'; then
+          QT_ARCH="macos"
+        else
+          echo "::error::Could not determine Qt arch for $RESOLVED. Available: $AVAILABLE_ARCHS" >&2
+          exit 1
+        fi
+        QT_INSTALL_DIR="$HOME/Qt"
+        aqt install-qt mac desktop "$RESOLVED" "$QT_ARCH" --outputdir "$QT_INSTALL_DIR"
+        QT_DIR="$QT_INSTALL_DIR/$RESOLVED/$QT_ARCH"
+        echo "$QT_DIR/bin" >> "$GITHUB_PATH"
+        echo "QT_ROOT_DIR=$QT_DIR" >> "$GITHUB_ENV"
+        echo "Qt${QT_MAJOR}_DIR=$QT_DIR/lib/cmake/Qt${QT_MAJOR}" >> "$GITHUB_ENV"
+        echo "QT_PLUGIN_PATH=$QT_DIR/plugins" >> "$GITHUB_ENV"
+        echo "CMAKE_PREFIX_PATH=$QT_DIR" >> "$GITHUB_ENV"
+        # Target x86_64 via CMake cross-compilation.
+        # For clang_64 (x86_64-only Qt), Qt6's cmake config rejects an ARM64 host;
+        # QT_NO_FORCE_ARCHITECTURE_CHECK suppresses that check (available since Qt 6.3,
+        # but clang_64 is only used for Qt 6.0-6.2 so this flag is a best-effort).
+        # For the universal "macos" arch both slices are present, so no flag is needed.
+        ARCH_FLAGS="-DCMAKE_OSX_ARCHITECTURES=x86_64"
+        if [[ "$QT_ARCH" == "clang_64" ]]; then
+          ARCH_FLAGS="$ARCH_FLAGS -DQT_NO_FORCE_ARCHITECTURE_CHECK=TRUE"
+        fi
+        echo "CMAKE_ARCH_FLAGS=$ARCH_FLAGS" >> "$GITHUB_ENV"
+
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
     needs: get-matrix
