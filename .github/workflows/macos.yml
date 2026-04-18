@@ -49,9 +49,16 @@ jobs:
           echo "::error::Could not resolve a Qt version matching $QT_VERSION" >&2
           exit 1
         fi
+        # Qt5 aqt arch identifier is "clang_64" (x86_64 only).
+        # Qt6 aqt arch identifier is "macos" (universal x86_64+ARM64).
+        if [[ "$QT_MAJOR" == "6" ]]; then
+          QT_ARCH="macos"
+        else
+          QT_ARCH="clang_64"
+        fi
         QT_INSTALL_DIR="$HOME/Qt"
-        aqt install-qt mac desktop "$RESOLVED" clang_64 --outputdir "$QT_INSTALL_DIR"
-        QT_DIR="$QT_INSTALL_DIR/$RESOLVED/clang_64"
+        aqt install-qt mac desktop "$RESOLVED" "$QT_ARCH" --outputdir "$QT_INSTALL_DIR"
+        QT_DIR="$QT_INSTALL_DIR/$RESOLVED/$QT_ARCH"
         echo "$QT_DIR/bin" >> "$GITHUB_PATH"
         echo "QT_ROOT_DIR=$QT_DIR" >> "$GITHUB_ENV"
         echo "Qt${QT_MAJOR}_DIR=$QT_DIR/lib/cmake/Qt${QT_MAJOR}" >> "$GITHUB_ENV"
