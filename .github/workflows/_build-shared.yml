@@ -15,6 +15,19 @@ on:
       qt_version:
         required: true
         type: string
+      qt_arch: # get rid of this, eventually, by detecting the correct Qt architecture based on the OS and compiler-
+        description: Qt architecture passed to jurplel/install-qt-action (e.g. clang_64 for macOS Intel).
+        required: false
+        type: string
+        default: ''
+      setup_env_script:
+        description: >
+          Optional shell script run after Qt is installed and before CMake configure.
+          Use this to configure the build environment (e.g. install Rosetta, export
+          CMAKE_OSX_ARCHITECTURES). When omitted the step is skipped entirely.
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
@@ -27,10 +40,16 @@ jobs:
         shell: bash
         run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+      - name: Set up environment
+        if: ${{ inputs.setup_env_script }}
+        shell: bash
+        run: ${{ inputs.setup_env_script }}
+        
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ inputs.qt_version }}
+          arch: ${{ inputs.qt_arch }}
           install-deps: 'true'
           set-env: 'true'
 
@@ -40,6 +59,7 @@ jobs:
           -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
           -DCMAKE_BUILD_TYPE=Release
+          ${{ steps.strings.outputs.osx_arch_flag }}
           -S ${{ github.workspace }}
 
       - name: Build
