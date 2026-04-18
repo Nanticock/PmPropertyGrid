@@ -6,11 +6,13 @@ on:
     branches: [main, develop]
     paths-ignore:
       - '*.md'
+      - 'docs/**'
 
   pull_request:
     branches: [main, develop]
     paths-ignore:
       - '*.md'
+      - 'docs/**'
 
 jobs:
   get-matrix:

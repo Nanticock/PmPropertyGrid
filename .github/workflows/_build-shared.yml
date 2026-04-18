@@ -15,6 +15,10 @@ on:
       qt_version:
         required: true
         type: string
+      qt_arch:
+        required: false
+        type: string
+        default: ''
 
 jobs:
   build:
@@ -27,24 +31,40 @@ jobs:
         shell: bash
         run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
+      - name: Install Rosetta
+        # Needed when running on an ARM runner but targeting x86_64 (clang_64) Qt binaries
+        if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch == 'clang_64'
+        run: softwareupdate --install-rosetta --agree-to-license
+
+      - name: Set arch prefix
+        id: arch
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "macOS" && "${{ runner.arch }}" == "ARM64" && "${{ inputs.qt_arch }}" == "clang_64" ]]; then
+            echo "cmd=arch -x86_64" >> "$GITHUB_OUTPUT"
+          else
+            echo "cmd=" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:
           version: ${{ inputs.qt_version }}
+          arch: ${{ inputs.qt_arch }}
           install-deps: 'true'
           set-env: 'true'
 
       - name: Configure CMake
         run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          ${{ steps.arch.outputs.cmd }} cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
           -DCMAKE_BUILD_TYPE=Release
           -S ${{ github.workspace }}
 
       - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+        run: ${{ steps.arch.outputs.cmd }} cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
 
       - name: Test
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: ctest --build-config Release
+        run: ${{ steps.arch.outputs.cmd }} ctest --build-config Release
