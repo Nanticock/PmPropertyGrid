@@ -40,7 +40,11 @@ jobs:
       qt_version: ${{ matrix.qt_version }}
       target_arch: x86_64
       qt_install_script: |
-        softwareupdate --install-rosetta --agree-to-license
+        # Install Rosetta if not already present; exits non-zero when already installed so we swallow the error
+        softwareupdate --install-rosetta --agree-to-license || true
+        # Run cmake, build and tests under arch -x86_64 so Qt6's cmake config sees the
+        # correct host architecture and doesn't reject the ARM64/x86_64 mismatch
+        echo "ARCH_PREFIX=arch -x86_64" >> "$GITHUB_ENV"
         python3 -m venv /tmp/aqt-venv
         source /tmp/aqt-venv/bin/activate
         pip install aqtinstall --quiet

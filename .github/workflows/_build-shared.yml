@@ -60,7 +60,7 @@ jobs:
 
       - name: Configure CMake
         run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
+          ${{ env.ARCH_PREFIX }} cmake -B ${{ steps.strings.outputs.build-output-dir }}
           -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
           -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
           -DCMAKE_BUILD_TYPE=Release
@@ -68,8 +68,8 @@ jobs:
           -S ${{ github.workspace }}
 
       - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+        run: ${{ env.ARCH_PREFIX }} cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
 
       - name: Test
         working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: ctest --build-config Release
+        run: ${{ env.ARCH_PREFIX }} ctest --build-config Release
