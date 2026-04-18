@@ -49,12 +49,12 @@ void Property::setAttributesFromOther(const Property &other)
 
     for (const auto &pair : other.m_attributes)
     {
-        AttributesFunctionHelper::CopyFunc copyFunction = Property::s_attributesRegistry[pair.first].copyFunc;
+        const AttributesFunctionHelper &helper = Property::s_attributesRegistry[pair.first];
 
-        if (copyFunction == nullptr)
+        if (helper.copyFunc == nullptr || helper.deleteFunc == nullptr)
             continue;
 
-        m_attributes.emplace(pair.first, copyFunction(*pair.second));
+        m_attributes.emplace(pair.first, AttributePtr(helper.copyFunc(*pair.second).release(), helper.deleteFunc));
     }
 }
 

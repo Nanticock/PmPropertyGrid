@@ -17,15 +17,19 @@ using TypeId = std::type_index;
 
 namespace internal
 {
+    // TODO: Remove this helper altogether if we started supporting polymorphic types
     struct AttributesFunctionHelper
     {
-        // TODO: define these as plain function pointers
         using CreateFunc = std::function<std::unique_ptr<Attribute>()>;
         using CopyFunc = std::function<std::unique_ptr<Attribute>(const Attribute &)>;
+        using DeleteFunc = std::function<void(Attribute *)>;
 
         CreateFunc createFunc;
         CopyFunc copyFunc;
+        DeleteFunc deleteFunc;
     };
+
+    using AttributePtr = std::unique_ptr<Attribute, AttributesFunctionHelper::DeleteFunc>;
 
     template <typename T>
     constexpr bool isAttribute()
@@ -114,7 +118,7 @@ private:
 private:
     int m_type;
     QString m_name;
-    std::unordered_map<TypeId, std::unique_ptr<Attribute>> m_attributes;
+    std::unordered_map<TypeId, internal::AttributePtr> m_attributes;
 
     // FIXME: move to a more appropriate place
     static std::unordered_map<TypeId, internal::AttributesFunctionHelper> s_attributesRegistry;
@@ -179,7 +183,8 @@ inline void PM::Property::addAttribute(const T &attribute)
     if (!internal::isRegisteredAttribute<DecayedT>())
         internal::registerAttribute<DecayedT>();
 
-    m_attributes[PM::internal::getTypeId<DecayedT>()] = std::make_unique<DecayedT>(attribute);
+    const auto &deleter = Property::s_attributesRegistry[PM::internal::getTypeId<DecayedT>()].deleteFunc;
+    m_attributes[PM::internal::getTypeId<DecayedT>()] = internal::AttributePtr(new DecayedT(attribute), deleter);
 }
 
 template <typename T, typename>
@@ -190,7 +195,8 @@ inline void PM::Property::addAttribute(T &&attribute)
     if (!internal::isRegisteredAttribute<DecayedT>())
         internal::registerAttribute<DecayedT>();
 
-    m_attributes[PM::internal::getTypeId<DecayedT>()] = std::make_unique<DecayedT>(std::forward<T>(attribute));
+    const auto &deleter = Property::s_attributesRegistry[PM::internal::getTypeId<DecayedT>()].deleteFunc;
+    m_attributes[PM::internal::getTypeId<DecayedT>()] = internal::AttributePtr(new DecayedT(std::forward<T>(attribute)), deleter);
 }
 
 template <typename T, typename>
@@ -234,8 +240,10 @@ inline void PM::internal::registerAttribute()
     using DecayedT = typename std::decay<T>::type;
 
     AttributesFunctionHelper helper;
+
     helper.createFunc = []() { return std::make_unique<DecayedT>(); };
-    helper.copyFunc = [](const Attribute &attr) { return std::make_unique<DecayedT>(static_cast<const T &>(attr)); };
+    helper.copyFunc = [](const Attribute &attr) { return std::make_unique<DecayedT>(static_cast<const DecayedT &>(attr)); };
+    helper.deleteFunc = [](Attribute *p) { delete static_cast<DecayedT *>(p); };
 
     Property::s_attributesRegistry[PM::internal::getTypeId<DecayedT>()] = helper;
 }
