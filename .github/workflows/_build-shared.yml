@@ -15,7 +15,16 @@ on:
       qt_version:
         required: true
         type: string
-      qt_arch:
+      qt_arch: # get rid of this, eventually, by detecting the correct Qt architecture based on the OS and compiler-
+        description: Qt architecture passed to jurplel/install-qt-action (e.g. clang_64 for macOS Intel).
+        required: false
+        type: string
+        default: ''
+      setup_env_script:
+        description: >
+          Optional shell script run after Qt is installed and before CMake configure.
+          Use this to configure the build environment (e.g. install Rosetta, export
+          CMAKE_OSX_ARCHITECTURES). When omitted the step is skipped entirely.
         required: false
         type: string
         default: ''
@@ -29,22 +38,13 @@ jobs:
       - name: Set reusable strings
         id: strings
         shell: bash
-        run: |
-          echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
-          # When cross-compiling for Intel x86_64 on an ARM64 runner, pass the
-          # architecture flag so CMake emits x86_64 binaries. Rosetta 2 runs them.
-          if [[ "${{ runner.os }}" == "macOS" && "${{ runner.arch }}" == "ARM64" && "${{ inputs.qt_arch }}" == "clang_64" ]]; then
-            echo "osx_arch_flag=-DCMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_OUTPUT"
-          else
-            echo "osx_arch_flag=" >> "$GITHUB_OUTPUT"
-          fi
+        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
-      - name: Install Rosetta
-        # Required so macOS can execute the x86_64 binaries built when cross-compiling
-        # for Intel on an ARM64 runner.
-        if: runner.os == 'macOS' && runner.arch == 'ARM64' && inputs.qt_arch == 'clang_64'
-        run: softwareupdate --install-rosetta --agree-to-license
-
+      - name: Set up environment
+        if: ${{ inputs.setup_env_script }}
+        shell: bash
+        run: ${{ inputs.setup_env_script }}
+        
       - name: Install Qt
         uses: jurplel/install-qt-action@v4
         with:

@@ -38,7 +38,11 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
-      qt_arch: clang_64  # x86_64 Qt; triggers Rosetta install + CMAKE_OSX_ARCHITECTURES=x86_64
+      qt_arch: clang_64  # x86_64 Qt binary for Intel cross-compilation
+      setup_env_script: |
+        # Install Rosetta 2 so x86_64 test binaries can run on the ARM64 runner.
+        softwareupdate --install-rosetta --agree-to-license || true
+        echo "CMAKE_OSX_ARCHITECTURES=x86_64" >> "$GITHUB_ENV"
 
   build-macos-arm:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-arm
