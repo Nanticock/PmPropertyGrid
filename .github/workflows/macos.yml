@@ -54,9 +54,9 @@ jobs:
 
   # Cross-compile Qt6 for Intel (x86_64) from the ARM64 runner via Rosetta 2.
   # This covers the Qt6 versions excluded from build-macos-intel due to the missing
-  # AGL.framework on macos-26-intel. Qt 6.0-6.2 ship a clang_64 (x86_64-only) binary;
-  # Qt 6.3+ ship a universal "macos" binary (x86_64 + ARM64), both work with
-  # CMAKE_OSX_ARCHITECTURES=x86_64 on an ARM64 host.
+  # AGL.framework on macos-26-intel. Qt 6.3+ ship a universal "macos" binary
+  # (x86_64 + ARM64) whose cmake config accepts any host; Qt 6.0-6.2 ship a
+  # "clang_64" (x86_64-only) binary used as a fallback for those older versions.
   build-macos-intel-qt6-rosetta:
     name: macos-${{ matrix.c_compiler }}-qt${{ matrix.qt_version }}-intel-rosetta
     needs: get-matrix
@@ -95,12 +95,17 @@ jobs:
           echo "::error::Could not resolve a Qt version matching $QT_VERSION" >&2
           exit 1
         fi
-        # Qt 6.0-6.2 use "clang_64" (x86_64-only); Qt 6.3+ use "macos" (universal).
+        # Prefer "macos" (universal x86_64+ARM64) over "clang_64" (x86_64-only).
+        # The universal binary's Qt6Config.cmake accepts any host architecture, so it
+        # works on the ARM64 runner with CMAKE_OSX_ARCHITECTURES=x86_64 to target Intel.
+        # "clang_64" (x86_64-only) rejects an ARM64 host in its cmake config even with
+        # QT_NO_FORCE_ARCHITECTURE_CHECK, so it is only used as a fallback for older Qt
+        # versions (6.0-6.2) that predate the universal "macos" package.
         AVAILABLE_ARCHS=$(aqt list-qt mac desktop --arch "$RESOLVED" 2>/dev/null)
-        if echo "$AVAILABLE_ARCHS" | tr ' ' '\n' | grep -q '^clang_64$'; then
-          QT_ARCH="clang_64"
-        elif echo "$AVAILABLE_ARCHS" | tr ' ' '\n' | grep -q '^macos$'; then
+        if echo "$AVAILABLE_ARCHS" | tr ' ' '\n' | grep -q '^macos$'; then
           QT_ARCH="macos"
+        elif echo "$AVAILABLE_ARCHS" | tr ' ' '\n' | grep -q '^clang_64$'; then
+          QT_ARCH="clang_64"
         else
           echo "::error::Could not determine Qt arch for $RESOLVED. Available: $AVAILABLE_ARCHS" >&2
           exit 1
