@@ -12,6 +12,8 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 option(PM_BUILD_PROPERTY_GRID_EXAMPLES "Determines whether or not the example projects should be built with the library" ON)
 
+include(CTest)
+
 add_subdirectory(src)
 
 if(PM_BUILD_PROPERTY_GRID_EXAMPLES)
