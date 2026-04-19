@@ -27,6 +27,46 @@
 #include <unordered_set>
 #include <vector>
 
+#ifdef __APPLE__
+// Apple's system <cxxabi.h> exposes only demangling and exception helpers;
+// the ABI type-info hierarchy is not declared there.  We redeclare the
+// minimal layout needed for dynamic_cast here, matching the memory layout
+// used by Apple's libc++abi (identical to upstream LLVM libc++abi).
+// All destructors are declared but not defined, so the compiler emits
+// external references that are resolved at link time from libc++abi.dylib.
+namespace __cxxabiv1
+{
+    struct __class_type_info : std::type_info
+    {
+        ~__class_type_info() override;
+    };
+    struct __base_class_type_info
+    {
+        const __class_type_info *__base_type;
+        long __offset_flags;
+        enum __offset_flags_masks
+        {
+            __virtual_mask = 0x1,
+            __public_mask  = 0x2,
+            __hwm_bit      = 2,
+            __offset_shift = 8
+        };
+    };
+    struct __si_class_type_info : __class_type_info
+    {
+        ~__si_class_type_info() override;
+        const __class_type_info *__base_type;
+    };
+    struct __vmi_class_type_info : __class_type_info
+    {
+        ~__vmi_class_type_info() override;
+        unsigned int __flags;
+        unsigned int __base_count;
+        __base_class_type_info __base_info[1];
+    };
+} // namespace __cxxabiv1
+#endif // __APPLE__
+
 namespace rtti_hierarchy
 {
 namespace detail
