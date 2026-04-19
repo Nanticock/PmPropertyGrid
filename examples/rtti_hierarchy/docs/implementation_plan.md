@@ -20,24 +20,16 @@ polymorphic objects by the contract with callers.
 
 ## ABI Detection
 
-All logic is gated at compile time by a single preprocessor split:
+ABI selection is performed by CMake at configure time based on the `MSVC` generator
+variable (which is true for both `cl.exe` and `clang-cl`):
 
-```cpp
-#if __has_include(<cxxabi.h>)
-    // ── Itanium path ──────────────────────────────────────────────────────
-    // GCC / Clang on Linux, macOS, Android, BSD, MinGW-w64
-    // Architectures: x86, x86-64, ARM32, ARM64
-#elif defined(_MSC_VER) || defined(_WIN32)
-    // ── MS ABI path ───────────────────────────────────────────────────────
-    // MSVC (cl.exe) and clang-cl on Windows
-    // Architectures: x86, x86-64, ARM32, ARM64
-#else
-    #error "Unsupported compiler / ABI"
-#endif
-```
+- **MS ABI**: `rtti_hierarchy_msABI.cpp` + `MicrosoftRTTI_p.h` — selected when `MSVC` is
+  true. Covers MSVC and clang-cl on Windows (x86, x86-64, ARM32, ARM64).
+- **Itanium ABI**: `rtti_hierarchy_itaniumABI.cpp` — selected otherwise. Covers GCC and
+  Clang on Linux, macOS, Android, BSD, and MinGW-w64.
 
-`__has_include(<cxxabi.h>)` is the most reliable test: MinGW on Windows includes it, MSVC
-does not. It is supported by GCC ≥ 5 and all versions of Clang.
+There is no runtime `#if __has_include` or `#ifdef _MSC_VER` branch in any source file.
+Each ABI implementation file includes only the headers it needs for its own ABI.
 
 ---
 
@@ -45,14 +37,21 @@ does not. It is supported by GCC ≥ 5 and all versions of Clang.
 
 ```
 examples/rtti_hierarchy/
-├── rtti_hierarchy.h            ← public API (unchanged)
-├── rtti_hierarchy.cpp          ← single implementation file, ABI-split internally
-├── rtti_hierarchy_tests.cpp    ← existing test suite
+├── rtti_hierarchy.h              ← public API
+├── rtti_hierarchy_impl_p.h       ← internal ABI dispatch interface (detail::abi_*)
+├── rtti_hierarchy.cpp            ← public API; null-guards then calls detail::abi_*
+├── rtti_hierarchy_msABI.cpp      ← MS ABI implementation (MSVC / clang-cl)
+├── rtti_hierarchy_itaniumABI.cpp ← Itanium ABI implementation (GCC / Clang)
+├── MicrosoftRTTI_p.h             ← MS RTTI structure definitions (private)
+├── rtti_hierarchy_tests.cpp      ← Catch2 test suite
 └── docs/
-    ├── implementation_plan.md  ← this file
-    ├── itanium_abi.md          ← Itanium ABI structures reference
-    └── ms_abi.md               ← MS ABI structures reference
+    ├── implementation_plan.md    ← this file
+    ├── itanium_abi.md            ← Itanium ABI structures reference
+    └── ms_abi.md                 ← MS ABI structures reference
 ```
+
+CMake selects either `rtti_hierarchy_msABI.cpp` or `rtti_hierarchy_itaniumABI.cpp` at
+configure time depending on whether `MSVC` is true.
 
 ---
 
@@ -232,7 +231,8 @@ namespace ms_rtti {
     }
 #endif
 
-#pragma pack(push, 4)
+// No #pragma pack needed: every field is int32_t/uint32_t or a native pointer,
+// so natural alignment produces the correct layout on all targets.
 
 struct TypeDescriptor {
     const void* pVFTable;   // → ??_7type_info@@6B@
@@ -241,7 +241,7 @@ struct TypeDescriptor {
 };
 
 struct PMD {
-    int32_t mdisp;   // member displacement; -1 if virtual base
+    int32_t mdisp;   // member displacement; irrelevant when pdisp != -1
     int32_t pdisp;   // vbptr displacement; -1 if not virtual
     int32_t vdisp;   // vbtable displacement
 };
@@ -281,8 +281,6 @@ struct CompleteObjectLocator {
 #endif
 };
 
-#pragma pack(pop)
-
 } // namespace ms_rtti
 ```
 
@@ -294,17 +292,13 @@ read_col(const void* obj) noexcept
 {
     // vfptr is the first word of the object
     const void* const* vptr_slot = static_cast<const void* const*>(obj);
-    const void* const* vtable    = static_cast<const void* const*>(*vptr_slot);
 
-    // vtable[-1] is one slot (sizeof(void*) bytes) before the address point.
-    // On x64: that slot holds an int32_t RVA; on x86: it holds an absolute ptr.
-#if defined(_WIN64)
-    const int32_t rva = *reinterpret_cast<const int32_t*>(
-                            static_cast<const char*>(*vptr_slot) - sizeof(void*));
-    return ms_rtti::from_rva<ms_rtti::CompleteObjectLocator>(rva);
-#else
-    return *reinterpret_cast<const ms_rtti::CompleteObjectLocator* const*>(vtable - 1);
-#endif
+    // vtable[-1] holds a full-width absolute pointer to the COL on ALL targets:
+    // 4 bytes on x86/ARM32, 8 bytes on x64/ARM64.  There is no image-relative
+    // encoding at the vtable slot — that applies only to the COL's own internal
+    // cross-reference fields (pTypeDescriptor, pClassDescriptor, pSelf).
+    const char* slot = static_cast<const char*>(*vptr_slot) - sizeof(void*);
+    return *reinterpret_cast<const ms_rtti::CompleteObjectLocator* const*>(slot);
 }
 ```
 
@@ -457,10 +451,20 @@ implementation must pass all of them on both ABI paths.
 
 ## Build Configuration
 
-No CMake changes are required. The implementation is a single `.cpp` file that uses
-`__has_include` to branch at compile time. Both `<cxxabi.h>` (Itanium) and the locally
-defined MS RTTI structures (MS ABI) are header-only dependencies already available on
-their respective platforms.
+ABI selection is driven by `CMakeLists.txt`. The `MSVC` variable (true for both `cl.exe`
+and `clang-cl`) selects the right source files:
 
-The `__ImageBase` symbol on Windows is provided automatically by the linker for any PE
-image (EXE or DLL) — no pragma or lib specification is needed.
+```cmake
+if (MSVC)
+    set(RTTI_ABI_IMPL rtti_hierarchy_msABI.cpp)
+    set(RTTI_ABI_PRIVATE_HEADERS MicrosoftRTTI_p.h)
+else()
+    set(RTTI_ABI_IMPL rtti_hierarchy_itaniumABI.cpp)
+    set(RTTI_ABI_PRIVATE_HEADERS "")
+endif()
+```
+
+The test executable compiles `rtti_hierarchy.cpp` together with the selected ABI
+implementation. No linker pragmas or extra library imports are needed. `<cxxabi.h>` is
+part of the standard runtime on all Itanium targets. On Windows, `__ImageBase` is
+provided automatically by the MSVC/LLD linker for every PE image (EXE or DLL).

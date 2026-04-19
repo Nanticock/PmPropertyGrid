@@ -314,7 +314,7 @@ For a **non-virtual base**:
 - `vdisp` = `0`
 
 For a **virtual base**:
-- `mdisp` = `0` (or irrelevant; the vbtable is used instead)
+- `mdisp` = irrelevant when `pdisp != -1`; do not rely on its value
 - `pdisp` = byte offset from the object's start to its `vbptr` (virtual base table pointer)
 - `vdisp` = byte offset within the vbtable to the entry containing the offset to this vbase
 

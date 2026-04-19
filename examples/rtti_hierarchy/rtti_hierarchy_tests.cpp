@@ -79,7 +79,7 @@ struct ChainC : ChainB
 // Helper
 // ============================================================
 
-static bool contains(const std::vector<std::type_index>& v, std::type_index ti)
+static bool contains(const std::vector<std::type_index> &v, std::type_index ti)
 {
     return std::find(v.begin(), v.end(), ti) != v.end();
 }

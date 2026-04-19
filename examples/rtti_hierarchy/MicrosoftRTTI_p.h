@@ -51,8 +51,7 @@ using rva_t = std::int32_t; // field type for all cross-references inside RTTI s
 template <typename T>
 inline const T *from_rva(rva_t rva) noexcept
 {
-    return reinterpret_cast<const T *>(
-        &__ImageBase + static_cast<std::ptrdiff_t>(rva));
+    return reinterpret_cast<const T *>(&__ImageBase + static_cast<std::ptrdiff_t>(rva));
 }
 
 #else // x86 / ARM32
@@ -62,8 +61,7 @@ inline const T *from_rva(rva_t rva) noexcept
 template <typename T>
 inline const T *from_rva(rva_t rva) noexcept
 {
-    return reinterpret_cast<const T *>(
-        static_cast<std::uintptr_t>(static_cast<std::uint32_t>(rva)));
+    return reinterpret_cast<const T *>(static_cast<std::uintptr_t>(static_cast<std::uint32_t>(rva)));
 }
 
 #endif
@@ -84,8 +82,8 @@ inline const T *from_rva(rva_t rva) noexcept
 struct TypeDescriptor
 {
     const void *pVFTable; // → ??_7type_info@@6B@  (type_info vtable in vcruntime)
-    void       *spare;    // runtime cache, null on construction
-    char        name[1];  // e.g. ".?AVFoo@@\0"  (null-terminated, variable length)
+    void *spare;          // runtime cache, null on construction
+    char name[1];         // e.g. ".?AVFoo@@\0"  (null-terminated, variable length)
 };
 
 // PMD — Pointer-to-Member Data: describes how to locate a base subobject.
@@ -104,21 +102,21 @@ struct PMD
 // The symbol name encodes all fields so the linker can COMDAT-merge duplicates.
 struct BaseClassDescriptor
 {
-    rva_t         pTypeDescriptor;   // → TypeDescriptor for this class
+    rva_t pTypeDescriptor;           // → TypeDescriptor for this class
     std::uint32_t numContainedBases; // count of entries in BCA below this node
                                      // (not counting this node itself)
-    PMD           where;             // locator for this base in the containing object
+    PMD where;                       // locator for this base in the containing object
     std::uint32_t attributes;        // flags — see BcdAttr below
-    rva_t         pClassDescriptor;  // → ClassHierarchyDescriptor for this class
+    rva_t pClassDescriptor;          // → ClassHierarchyDescriptor for this class
 };
 
 enum BcdAttr : std::uint32_t
 {
-    BCD_IsPrivateOnPath  = 0x1u | 0x8u, // access is private somewhere on path from MDC
-    BCD_IsAmbiguous      = 0x2u,        // base is ambiguous in the MDC hierarchy
-    BCD_IsPrivate        = 0x4u,        // base is directly private
-    BCD_IsVirtual        = 0x10u,       // base is a virtual base
-    BCD_HasHierarchyDesc = 0x40u,       // always set
+    BCD_IsPrivateOnPath = 0x1u | 0x8u, // access is private somewhere on path from MDC
+    BCD_IsAmbiguous = 0x2u,            // base is ambiguous in the MDC hierarchy
+    BCD_IsPrivate = 0x4u,              // base is directly private
+    BCD_IsVirtual = 0x10u,             // base is a virtual base
+    BCD_HasHierarchyDesc = 0x40u,      // always set
 };
 
 // ClassHierarchyDescriptor (CHD)
@@ -127,15 +125,15 @@ enum BcdAttr : std::uint32_t
 // of that class.
 struct ClassHierarchyDescriptor
 {
-    std::uint32_t signature;       // always 0 (reserved by the runtime)
-    std::uint32_t attributes;      // topology flags — see ChdAttr below
-    std::uint32_t numBaseClasses;  // total BCA entries including self at [0]
-    rva_t         pBaseClassArray; // → array of rva_t (BCDs), null-terminated
+    std::uint32_t signature;      // always 0 (reserved by the runtime)
+    std::uint32_t attributes;     // topology flags — see ChdAttr below
+    std::uint32_t numBaseClasses; // total BCA entries including self at [0]
+    rva_t pBaseClassArray;        // → array of rva_t (BCDs), null-terminated
 };
 
 enum ChdAttr : std::uint32_t
 {
-    CHD_HasBranching        = 0x1u, // multiple inheritance
+    CHD_HasBranching = 0x1u,        // multiple inheritance
     CHD_HasVirtualBranching = 0x2u, // virtual inheritance + multiple inheritance
     // 0x4u = HasAmbiguousBases: cl.exe computes this incorrectly; do not rely on it
 };
@@ -146,17 +144,21 @@ enum ChdAttr : std::uint32_t
 // immediately before the address point (the first function pointer).
 //
 //   x86/ARM32: vtable[-1] holds an absolute 4-byte pointer to the COL.
-//   x64/ARM64: vtable[-1] slot holds a 4-byte image-relative RVA to the COL.
+//   x64/ARM64: vtable[-1] holds an absolute 8-byte pointer to the COL.
+//
+// In both cases the slot is a full-width absolute pointer.  Only the COL's
+// own internal cross-reference fields (pTypeDescriptor, pClassDescriptor,
+// pSelf) use 32-bit image-relative RVAs on x64/ARM64.
 struct CompleteObjectLocator
 {
-    std::uint32_t signature;        // 0 = x86/absolute, 1 = x64/image-relative
-    std::int32_t  offset;           // byte offset from this vfptr subobject to MDC start
-    std::int32_t  cdOffset;         // vtordisp region offset (0 unless vbase dtor path)
-    rva_t         pTypeDescriptor;  // → TypeDescriptor for the most-derived class
-    rva_t         pClassDescriptor; // → ClassHierarchyDescriptor for the MDC
+    std::uint32_t signature; // 0 = x86/absolute, 1 = x64/image-relative
+    std::int32_t offset;     // byte offset from this vfptr subobject to MDC start
+    std::int32_t cdOffset;   // vtordisp region offset (0 unless vbase dtor path)
+    rva_t pTypeDescriptor;   // → TypeDescriptor for the most-derived class
+    rva_t pClassDescriptor;  // → ClassHierarchyDescriptor for the MDC
 #if defined(_WIN64)
-    rva_t         pSelf; // → this COL itself; used to recover __ImageBase at runtime
-                         // and as a sanity-check that we found a real COL
+    rva_t pSelf; // → this COL itself; used to recover __ImageBase at runtime
+                 // and as a sanity-check that we found a real COL
 #endif
 };
 

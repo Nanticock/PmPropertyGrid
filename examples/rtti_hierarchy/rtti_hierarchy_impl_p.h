@@ -19,10 +19,8 @@ namespace rtti_hierarchy
 {
 namespace detail
 {
-
-bool abi_supports_rtti(const void *obj) noexcept;
-bool abi_has_inheritance(const void *obj) noexcept;
-std::vector<std::type_index> abi_get_hierarchy(const void *obj);
-
+    bool abi_supports_rtti(const void *obj) noexcept;
+    bool abi_has_inheritance(const void *obj) noexcept;
+    std::vector<std::type_index> abi_get_hierarchy(const void *obj);
 } // namespace detail
 } // namespace rtti_hierarchy
