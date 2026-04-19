@@ -288,3 +288,43 @@ TEST_CASE("get_hierarchy: repeated calls return identical results", "[stability]
 
     REQUIRE(r1 == r2);
 }
+
+// ============================================================
+// has_inheritance — intermediate node in chain
+// ============================================================
+
+TEST_CASE("has_inheritance: intermediate chain node (ChainB) returns true", "[has_inheritance]")
+{
+    // ChainB is both a derived class (from ChainA) and a base class (of ChainC).
+    // has_inheritance must reflect the dynamic type's own hierarchy, not the
+    // static call-site type, so this tests the intermediate-node case directly.
+    ChainB obj;
+    REQUIRE(rtti_hierarchy::has_inheritance(&obj));
+}
+
+// ============================================================
+// get_hierarchy — ordering guarantees
+// ============================================================
+
+TEST_CASE("get_hierarchy: MultiDerived is listed before its bases", "[get_hierarchy]")
+{
+    // DFS pre-order means the most-derived class always occupies result[0].
+    MultiDerived obj;
+    auto result = rtti_hierarchy::get_hierarchy(&obj);
+
+    REQUIRE_FALSE(result.empty());
+    REQUIRE(result.front() == std::type_index(typeid(MultiDerived)));
+}
+
+TEST_CASE("get_hierarchy: deep chain preserves DFS pre-order", "[get_hierarchy]")
+{
+    // Expected pre-order: ChainC, ChainB, ChainA.
+    // result[0] == ChainC, result[1] == ChainB, result[2] == ChainA.
+    ChainC obj;
+    auto result = rtti_hierarchy::get_hierarchy(&obj);
+
+    REQUIRE(result.size() == 3u);
+    REQUIRE(result[0] == std::type_index(typeid(ChainC)));
+    REQUIRE(result[1] == std::type_index(typeid(ChainB)));
+    REQUIRE(result[2] == std::type_index(typeid(ChainA)));
+}

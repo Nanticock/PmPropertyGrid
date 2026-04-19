@@ -53,10 +53,16 @@ Object (vfptr in it)
                                               └─► ClassHierarchyDescriptor (for that base)
 ```
 
-All pointer-like references inside these structures are:
-- **x86 / ARM32**: Absolute 32-bit pointers (same as regular pointers on those targets)
-- **x64 / ARM64**: **32-bit image-relative offsets** (RVA = value − `__ImageBase`), NOT
-  64-bit pointers. This halves the size of all RTTI cross-references.
+Pointer encoding rules:
+- **Vtable slot** (the `vfptr[-1]` entry that references the COL): Always a
+  **full-width absolute pointer** on all targets — 4 bytes on x86/ARM32, 8 bytes on
+  x64/ARM64.  This is confirmed by LLVM's `CGVTables.cpp` `addVTableComponent`, which
+  stores the COL via `builder.add(rtti)` using `GlobalsInt8PtrTy` (a pointer type), **not**
+  `getImageRelativeConstant`.
+- **Cross-references inside the RTTI structures** (fields of COL, CHD, BCD):
+  - x86 / ARM32: Absolute 32-bit pointers
+  - x64 / ARM64: **32-bit image-relative offsets** (RVA = value − `__ImageBase`), NOT
+    64-bit pointers.  This halves the size of all RTTI cross-reference fields.
 
 ---
 
@@ -78,14 +84,13 @@ const T* rva_to_ptr(int32_t rva) {
 load address of the PE image (`HMODULE`).
 
 The `CompleteObjectLocator` on x64 also carries a `pSelf` field (its own RVA back to
-itself). The runtime uses this to recover the COL address from the stored `vfptr[-1]` RVA,
-without needing `__ImageBase` directly:
+itself).  This is used for sanity checking: resolving `pSelf` via `from_rva` must
+produce the same address as the COL pointer that was read from the vtable slot:
 
 ```
-// x64 vfptr[-1] contains: RVA of COL
-// COL.selfRVA contains: RVA of COL itself
-// Therefore: COL address = &__ImageBase + vfptr[-1]
-// Sanity: rva_to_ptr(col->selfRVA) should equal col
+// x64 vfptr[-1] contains: absolute 8-byte pointer to the COL (same encoding as x86)
+// COL.pSelf  contains: RVA of the COL itself (an internal field, stored as int32_t)
+// Sanity: rva_to_ptr(col->pSelf) should equal col
 ```
 
 ---
@@ -123,22 +128,28 @@ Object layout
 
 VFTable memory layout
 ──────────────────────────────────────
-[ RVA of COL ] ← 4-byte image-relative signed int; vfptr occupies 8 bytes but
-                 only the first 4 bytes carry the RVA; last 4 are padding/alignment
-[ func0      ] ← vfptr points here
-[ func1      ]
+[ COL* (8-byte absolute ptr) ] ← full pointer-width slot; same layout as x86 but 8 bytes
+[ func0 (8-byte ptr)         ] ← vfptr points here
+[ func1 (8-byte ptr)         ]
   ...
 ```
 
+The vtable slot is a **full 8-byte absolute pointer** to the COL, not an image-relative
+offset.  The image-relative encoding applies only to the COL's **internal** cross-reference
+fields (`pTypeDescriptor`, `pClassDescriptor`, `pSelf`), which are each `int32_t` RVAs.
+This is verified by LLVM's `CGVTables.cpp`: the `CK_RTTI` vtable component is emitted via
+`builder.add(rtti)` using `GlobalsInt8PtrTy` (a full pointer type), not via
+`getImageRelativeConstant`.
+
 Reading the COL on x64/ARM64:
 ```cpp
-const void*   vptr   = *static_cast<const void* const*>(obj);
-// vfptr[-1] is one slot before address_point; each slot is sizeof(void*)=8 bytes wide
-// The RVA is stored as int32_t at the start of that 8-byte slot
-const int32_t rva    = *reinterpret_cast<const int32_t*>(
-                           static_cast<const char*>(vptr) - sizeof(void*));
-extern "C" const char __ImageBase;
-const COL*    col    = reinterpret_cast<const COL*>(&__ImageBase + rva);
+const void* vptr = *static_cast<const void* const*>(obj);
+// Identical to x86: read one full pointer-width slot before the address point.
+const COL*  col  = *reinterpret_cast<const COL* const*>(
+                       static_cast<const char*>(vptr) - sizeof(void*));
+// col is now a direct absolute pointer to the COL; no __ImageBase arithmetic needed.
+// The COL's own fields (pTypeDescriptor, pClassDescriptor, pSelf) ARE stored as
+// int32_t RVAs and must be resolved via from_rva<T>.
 ```
 
 ---
@@ -573,9 +584,11 @@ implementation file.
 - `_CxxThrowException` uses `__stdcall` on x86
 
 ### x86-64 (AMD64)
-- All RTTI pointers are `int32_t` image-relative offsets
-- `COL.signature == 1`; `COL.pSelf` field present and used for sanity checking
-- `vfptr[-1]` slot is 8 bytes wide; the `int32_t` RVA is in the first 4 bytes
+- **Vtable slot** `vfptr[-1]`: 8-byte absolute pointer to the COL (same encoding as x86,
+  just pointer-width is 8 bytes).
+- **COL internal cross-reference fields** (`pTypeDescriptor`, `pClassDescriptor`, `pSelf`):
+  `int32_t` image-relative offsets (RVAs).
+- `COL.signature == 1`; `COL.pSelf` field present and used for sanity checking.
 
 ### ARM32 (Thumb-2)
 - 32-bit absolute pointers (same model as x86)
@@ -583,6 +596,6 @@ implementation file.
 - Function pointers may have thumb-bit (low bit set) — irrelevant for RTTI data pointers
 
 ### ARM64 (AArch64)
-- 64-bit targets use image-relative int32 (same model as x64)
-- `COL.signature == 1`; `COL.pSelf` present
-- Otherwise identical to x64 from the RTTI perspective
+- Vtable slot and internal-field encoding same as x64 (absolute pointer in slot, RVAs inside COL).
+- `COL.signature == 1`; `COL.pSelf` present.
+- Otherwise identical to x64 from the RTTI perspective.
