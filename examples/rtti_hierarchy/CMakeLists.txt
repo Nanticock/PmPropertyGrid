@@ -31,13 +31,22 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(catch2)
 
 # ------------------------------------------------------------
-# Library sources (currently built directly into test target)
+# ABI-specific source selection
 # ------------------------------------------------------------
+#
+# MSVC is true for both cl.exe and clang-cl
+# (CMAKE_CXX_SIMULATE_ID == "MSVC" for clang-cl).
+# Everything else (GCC, Clang on Linux/macOS/Android/…) uses the Itanium ABI.
 
-set(RTTI_HIERARCHY_SOURCES
-    rtti_hierarchy.cpp
-    rtti_hierarchy.h
-)
+if (MSVC)
+    set(RTTI_ABI_IMPL rtti_hierarchy_msABI.cpp)
+    set(RTTI_ABI_PRIVATE_HEADERS MicrosoftRTTI_p.h)
+    message(STATUS "rtti_hierarchy: MS ABI selected (cl.exe / clang-cl)")
+else()
+    set(RTTI_ABI_IMPL rtti_hierarchy_itaniumABI.cpp)
+    set(RTTI_ABI_PRIVATE_HEADERS "")
+    message(STATUS "rtti_hierarchy: Itanium ABI selected (GCC / Clang)")
+endif()
 
 # ------------------------------------------------------------
 # Test executable
@@ -45,7 +54,11 @@ set(RTTI_HIERARCHY_SOURCES
 
 add_executable(rtti_hierarchy_tests
     rtti_hierarchy_tests.cpp
-    ${RTTI_HIERARCHY_SOURCES}
+    rtti_hierarchy.cpp
+    rtti_hierarchy.h
+    rtti_hierarchy_impl_p.h
+    ${RTTI_ABI_IMPL}
+    ${RTTI_ABI_PRIVATE_HEADERS}
 )
 
 # Include current source directory
