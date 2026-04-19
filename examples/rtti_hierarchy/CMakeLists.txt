@@ -75,6 +75,14 @@ target_link_libraries(rtti_hierarchy_tests
         Catch2::Catch2
 )
 
+# On Apple platforms libc++.dylib does not re-export libc++abi.dylib.
+# The typeinfo objects for the ABI type-info hierarchy types
+# (__class_type_info, __si_class_type_info, __vmi_class_type_info) are
+# defined in libc++abi.dylib, so we must link against it explicitly.
+if (APPLE)
+    target_link_libraries(rtti_hierarchy_tests PRIVATE c++abi)
+endif()
+
 # ------------------------------------------------------------
 # Compiler warnings (sensible defaults for MSVC/GCC/Clang)
 # ------------------------------------------------------------
