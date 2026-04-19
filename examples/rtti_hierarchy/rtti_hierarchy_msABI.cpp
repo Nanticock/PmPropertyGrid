@@ -36,6 +36,9 @@
 #include <unordered_set>
 #include <vector>
 
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+
 namespace rtti_hierarchy
 {
 namespace detail
@@ -46,22 +49,104 @@ namespace
 using namespace ms_rtti;
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Memory safety helpers
+// ─────────────────────────────────────────────────────────────────────────────
+
+// Returns true only if [ptr, ptr+size) is in a committed, readable page.
+static bool is_readable(const void *ptr, std::size_t size) noexcept
+{
+    if (!ptr)
+        return false;
+    MEMORY_BASIC_INFORMATION mbi{};
+    if (VirtualQuery(ptr, &mbi, sizeof(mbi)) == 0)
+        return false;
+    if (mbi.State != MEM_COMMIT)
+        return false;
+    static constexpr DWORD kNoAccess = PAGE_NOACCESS | PAGE_GUARD;
+    if (mbi.Protect & kNoAccess)
+        return false;
+    // Check the region contains the entire requested range.
+    const auto region_end = reinterpret_cast<const char *>(mbi.BaseAddress) + mbi.RegionSize;
+    const auto range_end  = static_cast<const char *>(ptr) + size;
+    return range_end <= region_end;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Read the CompleteObjectLocator from the vtable slot before the address point
 // ─────────────────────────────────────────────────────────────────────────────
 
+// Forward declaration (defined below).
+bool validate_col(const CompleteObjectLocator *col) noexcept;
+
+// Try to read a COL from a single candidate vfptr value.
+// Returns nullptr if the pointer is not a valid vfptr with an RTTI COL.
+static const CompleteObjectLocator *try_read_col_from_vfptr(const void *vfptr) noexcept
+{
+    if (!vfptr)
+        return nullptr;
+    const char *slot = static_cast<const char *>(vfptr) - sizeof(void *);
+    if (!is_readable(slot, sizeof(void *)))
+        return nullptr;
+    const auto *col = *reinterpret_cast<const CompleteObjectLocator *const *>(slot);
+    return validate_col(col) ? col : nullptr;
+}
+
+// Returns the COL for the most-derived object.
+//
+// MSVC object layout for classes with virtual bases:
+//   The first word of a subobject that has direct virtual bases is a
+//   vbtable pointer (not a vfptr).  Its entries are int32_t offsets:
+//     vbt[0] = offset from this subobject to itself (always 0)
+//     vbt[1] = offset from this subobject to first virtual base
+//     vbt[2] = offset from this subobject to second virtual base, etc.
+//   Each virtual-base subobject then has its own vfptr at its offset 0.
+//
+// Strategy:
+//   1. Try the normal path: treat words[0] as a vfptr.
+//   2. If that fails, treat words[0] as a vbtable pointer and walk each
+//      virtual-base-offset entry (indices 1..N) to find a subobject with
+//      a valid COL.
 const CompleteObjectLocator *read_col(const void *obj) noexcept
 {
-    // Step 1: dereference the vfptr stored as the first word of the object.
-    const void *vfptr = *static_cast<const void *const *>(obj);
+    if (!is_readable(obj, sizeof(void *)))
+        return nullptr;
 
-    // Step 2: sizeof(void*) bytes before the address_point is a full-width
-    // absolute pointer to the COL — on ALL targets.
-    //   x86/ARM32: 4-byte ptr (sizeof(void*) == 4)
-    //   x64/ARM64: 8-byte ptr (sizeof(void*) == 8)
-    // The COL's INTERNAL fields (pTypeDescriptor, pClassDescriptor, pSelf)
-    // use 4-byte image-relative RVAs on x64 — resolved separately by from_rva<T>.
-    const char *slot = static_cast<const char *>(vfptr) - sizeof(void *);
-    return *reinterpret_cast<const CompleteObjectLocator *const *>(slot);
+    const void *words0 = *static_cast<const void *const *>(obj);
+
+    // Path 1: direct vfptr (non-virtual or pure non-virtual-base classes).
+    if (const auto *col = try_read_col_from_vfptr(words0))
+        return col;
+
+    // Path 2: words[0] might be a vbtable pointer.
+    // A vbtable is an array of int32_t.  Entry [0] is always 0 (self-offset).
+    // Entries [1..N] are byte offsets from obj to each virtual base subobject.
+    // We try to read up to kMaxVBases entries (hard cap to avoid runaway reads).
+    static constexpr int kMaxVBases = 16;
+    const auto *vbt = static_cast<const std::int32_t *>(words0);
+    if (!is_readable(vbt, sizeof(std::int32_t) * 2))
+        return nullptr;
+    if (vbt[0] != 0)        // vbt[0] must be 0; if not, this isn't a vbtable
+        return nullptr;
+
+    for (int i = 1; i < kMaxVBases; ++i)
+    {
+        // Check if vbt[i] is readable; stop if we fall off the end.
+        if (!is_readable(&vbt[i], sizeof(std::int32_t)))
+            break;
+        const std::int32_t vb_offset = vbt[i];
+        if (vb_offset == 0)
+            break; // end-of-table sentinel
+
+        const char *vbase = static_cast<const char *>(obj) + vb_offset;
+        if (!is_readable(vbase, sizeof(void *)))
+            continue;
+
+        const void *candidate_vfptr = *reinterpret_cast<const void *const *>(vbase);
+        if (const auto *col = try_read_col_from_vfptr(candidate_vfptr))
+            return col;
+    }
+
+    return nullptr;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -71,6 +156,11 @@ const CompleteObjectLocator *read_col(const void *obj) noexcept
 bool validate_col(const CompleteObjectLocator *col) noexcept
 {
     if (!col)
+        return false;
+
+    // Guard: the COL pointer itself might be garbage (e.g. data read from a
+    // vbtable slot).  Check readability before accessing any field.
+    if (!is_readable(col, sizeof(CompleteObjectLocator)))
         return false;
 
 #if defined(_WIN64)
