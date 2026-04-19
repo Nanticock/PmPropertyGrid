@@ -11,19 +11,21 @@
 // VFTable memory layout  (RTTI enabled):
 //
 //   x86 / ARM32:
-//     [ COL* (4-byte absolute ptr) ]   ← vfptr[-1] is one pointer-sized slot back
+//     [ COL* (4-byte absolute ptr) ]   ← sizeof(void*)=4 bytes before vfptr
 //     [ func0                      ]   ← vfptr stored in the object points here
 //     [ func1                      ]
 //     ...
 //
 //   x64 / ARM64:
-//     [ int32_t RVA of COL (4 bytes) + 4 bytes padding ]  ← one 8-byte slot
-//     [ func0 (8 bytes)                                 ]  ← vfptr points here
-//     [ func1 (8 bytes)                                 ]
+//     [ COL* (8-byte absolute ptr) ]   ← sizeof(void*)=8 bytes before vfptr
+//     [ func0 (8 bytes)            ]   ← vfptr points here
+//     [ func1 (8 bytes)            ]
 //     ...
 //
-// In both cases the COL reference lives sizeof(void*) bytes before vfptr.
-// On x64/ARM64 only the first 4 bytes of that slot are used (the RVA).
+// In both cases the slot contains a full-width ABSOLUTE POINTER to the COL.
+// Only the INTERNAL fields of the COL itself (pTypeDescriptor, pClassDescriptor,
+// pSelf) use 4-byte image-relative RVAs on x64 — the vtable slot is always a
+// full-pointer-width reference.
 
 #include "rtti_hierarchy_impl_p.h"
 
@@ -52,18 +54,14 @@ const CompleteObjectLocator *read_col(const void *obj) noexcept
     // Step 1: dereference the vfptr stored as the first word of the object.
     const void *vfptr = *static_cast<const void *const *>(obj);
 
-    // Step 2: go sizeof(void*) bytes backwards from the address point.
-    //   This is the slot that holds the COL reference regardless of target.
+    // Step 2: sizeof(void*) bytes before the address_point is a full-width
+    // absolute pointer to the COL — on ALL targets.
+    //   x86/ARM32: 4-byte ptr (sizeof(void*) == 4)
+    //   x64/ARM64: 8-byte ptr (sizeof(void*) == 8)
+    // The COL's INTERNAL fields (pTypeDescriptor, pClassDescriptor, pSelf)
+    // use 4-byte image-relative RVAs on x64 — resolved separately by from_rva<T>.
     const char *slot = static_cast<const char *>(vfptr) - sizeof(void *);
-
-#if defined(_WIN64)
-    // x64/ARM64: slot holds a 4-byte image-relative RVA to the COL.
-    const rva_t rva = *reinterpret_cast<const rva_t *>(slot);
-    return from_rva<CompleteObjectLocator>(rva);
-#else
-    // x86/ARM32: slot holds a 4-byte absolute pointer to the COL.
     return *reinterpret_cast<const CompleteObjectLocator *const *>(slot);
-#endif
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

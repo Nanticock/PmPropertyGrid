@@ -3,230 +3,288 @@
 
 #include "rtti_hierarchy.h"
 
+#include <algorithm>
 #include <memory>
+#include <typeindex>
+#include <typeinfo>
 
-// ------------------------------------------------------------
-// Test Types
-// ------------------------------------------------------------
+// ============================================================
+// Test type hierarchy
+//
+// All types below are polymorphic (have at least one virtual
+// function).  The API contract requires a valid polymorphic
+// object — passing a non-polymorphic pointer is undefined
+// behaviour and is not tested here.
+// ============================================================
 
-// Non-polymorphic
-struct PlainStruct
-{
-    int x{0};
-};
-
-// Polymorphic but no inheritance
+// Root: no bases
 struct PolyBase
 {
     virtual ~PolyBase() = default;
 };
 
 // Single inheritance
-struct SingleDerived : public PolyBase
+struct SingleDerived : PolyBase
 {
 };
 
-// Multiple inheritance
-struct Left
+// Multiple inheritance: two independent roots
+struct LeftBase
 {
-    virtual ~Left() = default;
+    virtual ~LeftBase() = default;
 };
 
-struct Right
+struct RightBase
 {
-    virtual ~Right() = default;
+    virtual ~RightBase() = default;
 };
 
-struct MultiDerived : public Left, public Right
+struct MultiDerived : LeftBase, RightBase
 {
 };
 
-// Virtual inheritance (diamond)
+// Diamond (virtual inheritance)
 struct DiamondBase
 {
     virtual ~DiamondBase() = default;
 };
 
-struct DiamondLeft : virtual public DiamondBase
+struct DiamondLeft : virtual DiamondBase
 {
 };
 
-struct DiamondRight : virtual public DiamondBase
+struct DiamondRight : virtual DiamondBase
 {
 };
 
-struct DiamondDerived : public DiamondLeft, public DiamondRight
+struct DiamondDerived : DiamondLeft, DiamondRight
 {
 };
 
-// ------------------------------------------------------------
-// supports_rtti tests
-// ------------------------------------------------------------
+// Deep chain: A <- B <- C
+struct ChainA
+{
+    virtual ~ChainA() = default;
+};
 
-TEST_CASE("supports_rtti returns false for nullptr", "[supports_rtti]")
+struct ChainB : ChainA
+{
+};
+
+struct ChainC : ChainB
+{
+};
+
+// ============================================================
+// Helper
+// ============================================================
+
+static bool contains(const std::vector<std::type_index>& v, std::type_index ti)
+{
+    return std::find(v.begin(), v.end(), ti) != v.end();
+}
+
+// ============================================================
+// supports_rtti
+// ============================================================
+
+TEST_CASE("supports_rtti: nullptr returns false", "[supports_rtti]")
 {
     REQUIRE_FALSE(rtti_hierarchy::supports_rtti(nullptr));
 }
 
-TEST_CASE("supports_rtti returns false for non-polymorphic type", "[supports_rtti]")
-{
-    PlainStruct obj;
-    REQUIRE_FALSE(rtti_hierarchy::supports_rtti(&obj));
-}
-
-TEST_CASE("supports_rtti returns true for polymorphic type", "[supports_rtti]")
+TEST_CASE("supports_rtti: root polymorphic object", "[supports_rtti]")
 {
     PolyBase obj;
     REQUIRE(rtti_hierarchy::supports_rtti(&obj));
 }
 
-// ------------------------------------------------------------
-// has_inheritance tests
-// ------------------------------------------------------------
+TEST_CASE("supports_rtti: derived object", "[supports_rtti]")
+{
+    SingleDerived obj;
+    REQUIRE(rtti_hierarchy::supports_rtti(&obj));
+}
 
-TEST_CASE("has_inheritance returns false for nullptr", "[has_inheritance]")
+TEST_CASE("supports_rtti: object accessed via base pointer", "[supports_rtti]")
+{
+    // Dynamic type (SingleDerived) must be detected, not the static type (PolyBase).
+    std::unique_ptr<PolyBase> ptr = std::make_unique<SingleDerived>();
+    REQUIRE(rtti_hierarchy::supports_rtti(ptr.get()));
+}
+
+TEST_CASE("supports_rtti: heap-allocated derived object", "[supports_rtti]")
+{
+    auto ptr = std::make_unique<DiamondDerived>();
+    REQUIRE(rtti_hierarchy::supports_rtti(ptr.get()));
+}
+
+// ============================================================
+// has_inheritance
+// ============================================================
+
+TEST_CASE("has_inheritance: nullptr returns false", "[has_inheritance]")
 {
     REQUIRE_FALSE(rtti_hierarchy::has_inheritance(nullptr));
 }
 
-TEST_CASE("has_inheritance returns false for polymorphic type without bases", "[has_inheritance]")
+TEST_CASE("has_inheritance: root class (no bases) returns false", "[has_inheritance]")
 {
     PolyBase obj;
     REQUIRE_FALSE(rtti_hierarchy::has_inheritance(&obj));
 }
 
-TEST_CASE("has_inheritance returns true for single inheritance", "[has_inheritance]")
+TEST_CASE("has_inheritance: single inheritance returns true", "[has_inheritance]")
 {
     SingleDerived obj;
     REQUIRE(rtti_hierarchy::has_inheritance(&obj));
 }
 
-TEST_CASE("has_inheritance returns true for multiple inheritance", "[has_inheritance]")
+TEST_CASE("has_inheritance: multiple inheritance returns true", "[has_inheritance]")
 {
     MultiDerived obj;
     REQUIRE(rtti_hierarchy::has_inheritance(&obj));
 }
 
-TEST_CASE("has_inheritance returns true for virtual inheritance", "[has_inheritance]")
+TEST_CASE("has_inheritance: virtual (diamond) inheritance returns true", "[has_inheritance]")
 {
     DiamondDerived obj;
     REQUIRE(rtti_hierarchy::has_inheritance(&obj));
 }
 
-// ------------------------------------------------------------
-// get_hierarchy tests
-// ------------------------------------------------------------
-
-TEST_CASE("get_hierarchy returns empty for nullptr", "[get_hierarchy]")
+TEST_CASE("has_inheritance: deep chain leaf returns true", "[has_inheritance]")
 {
-    auto result = rtti_hierarchy::get_hierarchy(nullptr);
-    REQUIRE(result.empty());
+    ChainC obj;
+    REQUIRE(rtti_hierarchy::has_inheritance(&obj));
 }
 
-TEST_CASE("get_hierarchy returns empty for non-polymorphic type", "[get_hierarchy]")
+TEST_CASE("has_inheritance: base pointer to derived reflects dynamic type", "[has_inheritance]")
 {
-    PlainStruct obj;
-    auto result = rtti_hierarchy::get_hierarchy(&obj);
-    REQUIRE(result.empty());
+    std::unique_ptr<PolyBase> ptr = std::make_unique<SingleDerived>();
+    // ptr.get() is PolyBase* but the dynamic object is SingleDerived.
+    REQUIRE(rtti_hierarchy::has_inheritance(ptr.get()));
 }
 
-TEST_CASE("get_hierarchy returns at least one type for polymorphic object", "[get_hierarchy]")
+// ============================================================
+// get_hierarchy — nullptr
+// ============================================================
+
+TEST_CASE("get_hierarchy: nullptr returns empty vector", "[get_hierarchy]")
+{
+    REQUIRE(rtti_hierarchy::get_hierarchy(nullptr).empty());
+}
+
+// ============================================================
+// get_hierarchy — content: root class
+// ============================================================
+
+TEST_CASE("get_hierarchy: root class contains exactly itself", "[get_hierarchy]")
 {
     PolyBase obj;
     auto result = rtti_hierarchy::get_hierarchy(&obj);
-    REQUIRE_FALSE(result.empty());
+
+    REQUIRE(result.size() == 1u);
+    REQUIRE(contains(result, std::type_index(typeid(PolyBase))));
 }
 
-TEST_CASE("get_hierarchy handles single inheritance", "[get_hierarchy]")
+// ============================================================
+// get_hierarchy — content: single inheritance
+// ============================================================
+
+TEST_CASE("get_hierarchy: SingleDerived contains itself and PolyBase", "[get_hierarchy]")
 {
     SingleDerived obj;
     auto result = rtti_hierarchy::get_hierarchy(&obj);
-    REQUIRE_FALSE(result.empty());
+
+    REQUIRE(result.size() == 2u);
+    REQUIRE(contains(result, std::type_index(typeid(SingleDerived))));
+    REQUIRE(contains(result, std::type_index(typeid(PolyBase))));
 }
 
-TEST_CASE("get_hierarchy handles multiple inheritance", "[get_hierarchy]")
+TEST_CASE("get_hierarchy: derived is listed before its base", "[get_hierarchy]")
+{
+    // The DFS walk must emit each class before recursing into its bases,
+    // so the most-derived type is always first.
+    SingleDerived obj;
+    auto result = rtti_hierarchy::get_hierarchy(&obj);
+
+    REQUIRE_FALSE(result.empty());
+    REQUIRE(result.front() == std::type_index(typeid(SingleDerived)));
+}
+
+// ============================================================
+// get_hierarchy — content: multiple inheritance
+// ============================================================
+
+TEST_CASE("get_hierarchy: MultiDerived contains itself and both bases", "[get_hierarchy]")
 {
     MultiDerived obj;
     auto result = rtti_hierarchy::get_hierarchy(&obj);
-    REQUIRE_FALSE(result.empty());
+
+    REQUIRE(result.size() == 3u);
+    REQUIRE(contains(result, std::type_index(typeid(MultiDerived))));
+    REQUIRE(contains(result, std::type_index(typeid(LeftBase))));
+    REQUIRE(contains(result, std::type_index(typeid(RightBase))));
 }
 
-TEST_CASE("get_hierarchy handles diamond inheritance", "[get_hierarchy]")
+// ============================================================
+// get_hierarchy — content: diamond (virtual inheritance)
+// ============================================================
+
+TEST_CASE("get_hierarchy: diamond base appears exactly once", "[get_hierarchy]")
 {
     DiamondDerived obj;
     auto result = rtti_hierarchy::get_hierarchy(&obj);
-    REQUIRE_FALSE(result.empty());
+
+    // Expected: DiamondDerived, DiamondLeft, DiamondBase, DiamondRight
+    // DiamondBase is reachable via both DiamondLeft and DiamondRight but
+    // must appear only once (deduplication via visited set).
+    REQUIRE(result.size() == 4u);
+    REQUIRE(contains(result, std::type_index(typeid(DiamondDerived))));
+    REQUIRE(contains(result, std::type_index(typeid(DiamondLeft))));
+    REQUIRE(contains(result, std::type_index(typeid(DiamondRight))));
+    REQUIRE(contains(result, std::type_index(typeid(DiamondBase))));
 }
 
-// ------------------------------------------------------------
-// Stability / repeated calls
-// ------------------------------------------------------------
+// ============================================================
+// get_hierarchy — content: deep chain
+// ============================================================
 
-TEST_CASE("repeated calls are stable", "[stability]")
+TEST_CASE("get_hierarchy: deep chain contains all levels", "[get_hierarchy]")
 {
-    SingleDerived obj;
+    ChainC obj;
+    auto result = rtti_hierarchy::get_hierarchy(&obj);
 
+    REQUIRE(result.size() == 3u);
+    REQUIRE(contains(result, std::type_index(typeid(ChainC))));
+    REQUIRE(contains(result, std::type_index(typeid(ChainB))));
+    REQUIRE(contains(result, std::type_index(typeid(ChainA))));
+}
+
+// ============================================================
+// get_hierarchy — base pointer to derived (dynamic type wins)
+// ============================================================
+
+TEST_CASE("get_hierarchy: base pointer returns hierarchy of dynamic type", "[get_hierarchy]")
+{
+    std::unique_ptr<PolyBase> ptr = std::make_unique<SingleDerived>();
+    auto result = rtti_hierarchy::get_hierarchy(ptr.get());
+
+    // Even though the static type is PolyBase*, the vptr points to
+    // SingleDerived's vtable, so we must see SingleDerived's hierarchy.
+    REQUIRE(result.size() == 2u);
+    REQUIRE(contains(result, std::type_index(typeid(SingleDerived))));
+    REQUIRE(contains(result, std::type_index(typeid(PolyBase))));
+}
+
+// ============================================================
+// Stability
+// ============================================================
+
+TEST_CASE("get_hierarchy: repeated calls return identical results", "[stability]")
+{
+    DiamondDerived obj;
     auto r1 = rtti_hierarchy::get_hierarchy(&obj);
     auto r2 = rtti_hierarchy::get_hierarchy(&obj);
 
-    REQUIRE(r1.size() == r2.size());
+    REQUIRE(r1 == r2);
 }
-
-// ------------------------------------------------------------
-// Heap allocation path
-// ------------------------------------------------------------
-
-TEST_CASE("heap allocated polymorphic object", "[heap]")
-{
-    auto ptr = std::make_unique<SingleDerived>();
-
-    REQUIRE(rtti_hierarchy::supports_rtti(ptr.get()));
-    REQUIRE(rtti_hierarchy::has_inheritance(ptr.get()));
-
-    auto result = rtti_hierarchy::get_hierarchy(ptr.get());
-    REQUIRE_FALSE(result.empty());
-}
-
-// ------------------------------------------------------------
-// Base pointer to derived object
-// ------------------------------------------------------------
-
-TEST_CASE("base pointer referencing derived object", "[polymorphism]")
-{
-    std::unique_ptr<PolyBase> ptr = std::make_unique<SingleDerived>();
-
-    REQUIRE(rtti_hierarchy::supports_rtti(ptr.get()));
-    REQUIRE(rtti_hierarchy::has_inheritance(ptr.get()));
-
-    auto result = rtti_hierarchy::get_hierarchy(ptr.get());
-    REQUIRE_FALSE(result.empty());
-}
-
-// ============================================================
-// OPTIONAL: unsafe / fuzz-style tests (DISABLED BY DEFAULT)
-// ============================================================
-//
-// These tests are intentionally NOT part of the unit suite
-// because they operate on undefined or non-object memory.
-//
-// Enable ONLY in a dedicated fuzz or sanitizer build.
-//
-
-#if 0
-
-TEST_CASE("random pointer is handled safely")
-{
-    int x = 42;
-    void* p = &x;
-
-    REQUIRE_FALSE(rtti_hierarchy::supports_rtti(p));
-}
-
-TEST_CASE("stack garbage pointer is handled safely")
-{
-    void* p = reinterpret_cast<void*>(0x1234);
-
-    REQUIRE_FALSE(rtti_hierarchy::supports_rtti(p));
-}
-
-#endif
