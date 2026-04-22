@@ -15,6 +15,10 @@ on:
       qt_version:
         required: true
         type: string
+      build_types_bash:
+        description: Bash array literal of CMake build configurations to process sequentially.
+        required: true
+        type: string
       qt_arch: # get rid of this, eventually, by detecting the correct Qt architecture based on the OS and compiler-
         description: Qt architecture passed to jurplel/install-qt-action (e.g. clang_64 for macOS Intel).
         required: false
@@ -38,7 +42,7 @@ jobs:
       - name: Set reusable strings
         id: strings
         shell: bash
-        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        run: echo "build-root-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
       - name: Set up environment
         if: ${{ inputs.setup_env_script }}
@@ -53,18 +57,42 @@ jobs:
           install-deps: 'true'
           set-env: 'true'
 
-      - name: Configure CMake
-        run: >
-          cmake -B ${{ steps.strings.outputs.build-output-dir }}
-          -DCMAKE_C_COMPILER=${{ inputs.c_compiler }}
-          -DCMAKE_CXX_COMPILER=${{ inputs.cpp_compiler }}
-          -DCMAKE_BUILD_TYPE=Release
-          ${{ steps.strings.outputs.osx_arch_flag }}
-          -S ${{ github.workspace }}
+      - name: Configure requested configurations
+        shell: bash
+        run: |
+          build_types=${{ inputs.build_types_bash }}
 
-      - name: Build
-        run: cmake --build ${{ steps.strings.outputs.build-output-dir }} --config Release
+          for build_type in "${build_types[@]}"; do
+            build_dir="${{ steps.strings.outputs.build-root-dir }}/$(printf '%s' "$build_type" | tr '[:upper:]' '[:lower:]')"
 
-      - name: Test
-        working-directory: ${{ steps.strings.outputs.build-output-dir }}
-        run: ctest --build-config Release
+            echo "Configuring ${build_type} in ${build_dir}"
+            cmake -B "$build_dir" \
+              -DCMAKE_C_COMPILER="${{ inputs.c_compiler }}" \
+              -DCMAKE_CXX_COMPILER="${{ inputs.cpp_compiler }}" \
+              -DCMAKE_BUILD_TYPE="$build_type" \
+              -S "${{ github.workspace }}"
+          done
+
+      - name: Build requested configurations
+        shell: bash
+        run: |
+          build_types=${{ inputs.build_types_bash }}
+
+          for build_type in "${build_types[@]}"; do
+            build_dir="${{ steps.strings.outputs.build-root-dir }}/$(printf '%s' "$build_type" | tr '[:upper:]' '[:lower:]')"
+
+            echo "Building ${build_type}"
+            cmake --build "$build_dir" --config "$build_type"
+          done
+
+      - name: Test requested configurations
+        shell: bash
+        run: |
+          build_types=${{ inputs.build_types_bash }}
+
+          for build_type in "${build_types[@]}"; do
+            build_dir="${{ steps.strings.outputs.build-root-dir }}/$(printf '%s' "$build_type" | tr '[:upper:]' '[:lower:]')"
+
+            echo "Testing ${build_type}"
+            ctest --test-dir "$build_dir" --build-config "$build_type"
+          done
