@@ -42,7 +42,7 @@ jobs:
       - name: Set reusable strings
         id: strings
         shell: bash
-        run: echo "build-output-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
+        run: echo "build-root-dir=${{ github.workspace }}/build" >> "$GITHUB_OUTPUT"
 
       - name: Set up environment
         if: ${{ inputs.setup_env_script }}
