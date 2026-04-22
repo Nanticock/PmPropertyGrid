@@ -40,3 +40,4 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
+      build_types_bash: ${{ needs.get-matrix.outputs.build_types_bash }}

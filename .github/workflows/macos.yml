@@ -38,6 +38,7 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
+      build_types_bash: ${{ needs.get-matrix.outputs.build_types_bash }}
       qt_arch: clang_64  # x86_64 Qt binary for Intel cross-compilation
       setup_env_script: |
         # Install Rosetta 2 so x86_64 test binaries can run on the ARM64 runner.
@@ -69,3 +70,4 @@ jobs:
       c_compiler: ${{ matrix.c_compiler }}
       cpp_compiler: ${{ matrix.cpp_compiler }}
       qt_version: ${{ matrix.qt_version }}
+      build_types_bash: ${{ needs.get-matrix.outputs.build_types_bash }}
