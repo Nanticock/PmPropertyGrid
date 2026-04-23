@@ -61,6 +61,16 @@ add_executable(rtti_hierarchy_tests
     ${RTTI_ABI_PRIVATE_HEADERS}
 )
 
+# Make sure big object files are enabled,
+# Catch2's single-header distribution can easily exceed the object file size limit on some platforms.
+target_compile_options(rtti_hierarchy_tests
+    PRIVATE
+        $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
+        $<$<CXX_COMPILER_ID:GNU>:-Wa,-mbig-obj>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_FRONTEND_VARIANT:MSVC>>:/bigobj>
+        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_FRONTEND_VARIANT:GNU>>:-Wa,-mbig-obj>
+)
+
 # Include current source directory
 
 target_include_directories(rtti_hierarchy_tests
