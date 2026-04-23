@@ -62,13 +62,14 @@ add_executable(rtti_hierarchy_tests
 )
 
 # Make sure big object files are enabled,
-# Catch2's single-header distribution can easily exceed the object file size limit on some platforms.
+# Catch2's single-header distribution can easily exceed the object file size limit on some windows machines.
+# This problem is only relevant on windows
 target_compile_options(rtti_hierarchy_tests
     PRIVATE
-        $<$<CXX_COMPILER_ID:MSVC>:/bigobj>
-        $<$<CXX_COMPILER_ID:GNU>:-Wa,-mbig-obj>
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_FRONTEND_VARIANT:MSVC>>:/bigobj>
-        $<$<AND:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_FRONTEND_VARIANT:GNU>>:-Wa,-mbig-obj>
+        $<$<CXX_COMPILER_ID:MSVC>:/bigobj>                                                                           # MSVC
+        $<$<AND:$<PLATFORM_ID:Windows>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_FRONTEND_VARIANT:MSVC>>:/bigobj>      # clang-cl
+        $<$<AND:$<PLATFORM_ID:Windows>,$<CXX_COMPILER_ID:GNU>>:-Wa,-mbig-obj>                                        # MinGW GCC
+        $<$<AND:$<PLATFORM_ID:Windows>,$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_FRONTEND_VARIANT:GNU>>:-Wa,-mbig-obj> # clang
 )
 
 # Include current source directory
